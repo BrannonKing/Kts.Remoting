@@ -138,8 +138,6 @@ namespace CommonSerializer.ProtobufNet
 				throw new ArgumentException("Invalid container type. Use the GenerateContainer method.");
 
 			Serialize<T>(t, psc.Stream);
-
-			left off: update the count
 		}
 	}
 }

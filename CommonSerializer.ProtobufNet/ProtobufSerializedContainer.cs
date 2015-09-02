@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CommonSerializer.ProtobufNet
 {
-	[ProtoBuf.ProtoContract]
+	[ProtoBuf.ProtoContract(UseProtoMembersOnly = true)]
 	public class ProtobufSerializedContainer : ISerializedContainer
 	{
 		private MemoryStream _stream = new MemoryStream();
@@ -14,12 +14,6 @@ namespace CommonSerializer.ProtobufNet
 		public Stream Stream {  get { return _stream; } }
 
 		[ProtoBuf.ProtoMember(1)]
-		public int Count
-		{
-			get; private set;
-		}
-
-		[ProtoBuf.ProtoMember(2)]
 		public byte[] Data
 		{
 			get { return _stream.ToArray(); }
