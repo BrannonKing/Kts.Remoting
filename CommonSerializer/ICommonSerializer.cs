@@ -7,6 +7,7 @@ namespace CommonSerializer
     {
         string Name { get; }
         string Description { get; }
+		bool StreamsUtf8 { get; }
 
 		ISerializedContainer GenerateContainer();
 		void Serialize<T>(T t, ISerializedContainer container);

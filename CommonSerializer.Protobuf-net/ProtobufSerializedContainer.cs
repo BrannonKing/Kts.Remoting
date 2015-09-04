@@ -16,7 +16,7 @@ namespace CommonSerializer.ProtobufNet
 		[ProtoBuf.ProtoMember(1)]
 		public byte[] Data
 		{
-			get { return _stream.ToArray(); }
+			get { return _stream.ToArray(); } // need to flush first?
 			set { _stream = new MemoryStream(value, false); }
 		}
 	}

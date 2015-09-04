@@ -44,6 +44,14 @@ namespace CommonSerializer.Json.NET
 			}
 		}
 
+		public bool StreamsUtf8
+		{
+			get
+			{
+				return true;
+			}
+		}
+
 		public object DeepClone(object t)
 		{
 			using (var ms = new MemoryStream())

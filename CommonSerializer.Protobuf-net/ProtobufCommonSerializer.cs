@@ -42,6 +42,14 @@ namespace CommonSerializer.ProtobufNet
 			}
 		}
 
+		public bool StreamsUtf8
+		{
+			get
+			{
+				return false;
+			}
+		}
+
 		public object DeepClone(object t)
 		{
 			return _runtime.DeepClone(t);
