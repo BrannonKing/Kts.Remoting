@@ -1,7 +1,7 @@
 ﻿using CommonSerializer;
 using System.Runtime.Serialization;
 
-namespace Kts.Remoting.Server
+namespace Kts.Remoting
 {
 	[DataContract]
 	public sealed class Message
