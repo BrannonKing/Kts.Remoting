@@ -76,10 +76,6 @@
       <Project>{6d8f5c82-4826-4008-90c1-0b8c4023c075}</Project>
       <Name>CommonSerializer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Kts.Remoting.Client\Kts.Remoting.Client.csproj">
-      <Project>{401dd6ea-3101-4b6a-8e6d-878d731a9632}</Project>
-      <Name>Kts.Remoting.Client</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Kts.Remoting.Server\Kts.Remoting.Server.csproj">
       <Project>{8d5eb1d5-d853-4428-9bc0-3d24c72dd49b}</Project>
       <Name>Kts.Remoting.Server</Name>
