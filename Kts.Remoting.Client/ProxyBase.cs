@@ -18,5 +18,23 @@ namespace Kts.Remoting.Client
 		{
 
 		}
+
+		private static readonly char[] Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
+
+		private static 
+
+		protected static string ToBase62(long value)
+		{
+			var str = "";
+			var len = (long)Base62Chars.Length;
+			while (value != 0)
+			{
+				var rem = value % len;
+				str += Base62Chars[(int)rem];
+				value /= len;
+			}
+			return str;
+		}
+
 	}
 }
