@@ -6,22 +6,28 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using CommonSerializer;
 
 namespace Kts.Remoting.Client
 {
-	public class ProxyGenerator
+	public class CodeDomProxyGenerator : IProxyGenerator
 	{
-		internal string GenerateClassDefinition<T>()
+		internal string GenerateClassDefinition<T>(string className)
 		{
-			var className = "ProxyFor" + typeof(T).Name;
-			var hubName = typeof(T).Name; // for now
-
 			var sb = new StringBuilder();
 			sb.Append("class ");
 			sb.Append(className);
 			sb.Append(": Kts.Remoting.Client.ProxyBase, ");
 			sb.AppendLine(typeof(T).FullName);
 			sb.AppendLine("{");
+
+			sb.Append("\tpublic ");
+			sb.Append(className);
+			sb.Append("(");
+			sb.Append(typeof(IProxyWebSocket).FullName);
+			sb.Append(" socket, ");
+			sb.Append(typeof(ICommonSerializer).FullName);
+			sb.AppendLine(" serializer, string hubName) : base(socket, serializer, hubName) {}");
 
 			var methods = typeof(T).GetMethods();
 			foreach(var method in methods)
@@ -58,18 +64,33 @@ namespace Kts.Remoting.Client
 				sb.Append("\t\tvar msg = new ");
 				sb.Append(typeof(Message).FullName);
 				sb.AppendLine("();");
-				sb.Append("msg.Hub = \"");
-				sb.Append(hubName);
+				sb.Append("\t\tmsg.Method = \"");
+				sb.Append(method.Name);
 				sb.AppendLine("\";");
-				sb.a
+				sb.AppendLine("\t\tmsg.Arguments = _serializer.GenerateContainer();");
 
+				// now serialize the parameters
+				for (int i = 0; i < parameters.Length; i++)
+				{
+					sb.Append("\t\t_serializer.Serialize(");
+					sb.Append(parameters[i].Name);
+					sb.AppendLine(", msg.Arguments);");
+				}
+
+				sb.Append("\t\treturn Send<");
+				if (method.ReturnType == typeof(Task))
+					sb.Append("bool");
+				else
+					sb.Append(method.ReturnType.GetGenericArguments().Single().FullName);
+				sb.AppendLine(">(msg);");
+				sb.AppendLine("\t}");
 			}
 
 			sb.AppendLine("}");
 			return sb.ToString();
 		}
 
-		internal T CompileAndLoadClassDefinition<T>(string def)
+		internal void CompileAndLoadClassDefinition<T>(string def)
 		{
 			var provider = CodeDomProvider.CreateProvider("CSharp");
 			var cp = new CompilerParameters();
@@ -85,8 +106,21 @@ namespace Kts.Remoting.Client
 			cp.IncludeDebugInformation = false;
 
 			// Add an assembly reference.
-			cp.ReferencedAssemblies.Add("System.dll");
+			var references = new HashSet<string>{"System"};
+			foreach (var type in typeof(T).GetInterfaces())
+				references.Add(type.Assembly.GetName().Name);
+			foreach (var method in typeof(T).GetMethods())
+			{
+				foreach (var type in method.GetGenericArguments())
+					references.Add(type.Assembly.GetName().Name);
+				foreach (var type in method.GetParameters().Select(p => p.ParameterType))
+					references.Add(type.Assembly.GetName().Name);
+				references.Add(method.ReturnType.Assembly.GetName().Name);
+			}
 
+			foreach (var assembly in references)
+				cp.ReferencedAssemblies.Add(assembly);
+			
 			// Save the assembly as a physical file.
 			cp.GenerateInMemory = true; // even when true it still writes a file; we just hope it removes the file as well
 
@@ -127,10 +161,14 @@ namespace Kts.Remoting.Client
 
 		public T Create<T>()
 		{
-			var def = GenerateClassDefinition<T>();
-			var type = CompileAndLoadClassDefinition<T>(def);
+			var className = "ProxyFor" + typeof(T).Name;
+			var def = GenerateClassDefinition<T>(className);
+			CompileAndLoadClassDefinition<T>(def);
 
-			return (T)Activator.CreateInstance(socket);
+			var hubName = typeof(T).Name; // for now
+			var type = Type.GetType(className);
+
+			return (T)Activator.CreateInstance(type, _socket, _serializer, hubName);
 		}
 	}
 }

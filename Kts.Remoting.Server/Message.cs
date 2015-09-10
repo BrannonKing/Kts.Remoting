@@ -10,7 +10,7 @@ namespace Kts.Remoting
 		/// Unique to the process sending the message. Used to tie a response to the original message.
 		/// </summary>
 		[DataMember(Name = "I", Order = 1)]
-		public string Id { get; set; }
+		public string ID { get; set; }
 
 		/// <summary>
 		/// Name of the class to run the method on. It will be absent on a response.
@@ -42,6 +42,17 @@ namespace Kts.Remoting
 		[DataMember(Name = "T", Order = 7)]
 		public string StackTrace { get; set; }
 
+		public override bool Equals(object obj)
+		{
+			var other = obj as Message;
+			if (other == null) return false;
+			return ID == other.ID;
+		}
+
+		public override int GetHashCode()
+		{
+			return ID.GetHashCode();
+		}
 	}
 
 	// from SignalR:
