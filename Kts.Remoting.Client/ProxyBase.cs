@@ -36,7 +36,8 @@ namespace Kts.Remoting.Client
 			using (var ms = new MemoryStream()) // TODO: make a buffer pool
 			{
 				_serializer.Serialize(message, ms);
-				await _socket.Send(ms.ToArray(), !_serializer.StreamsUtf8);
+				ms.Position = 0;
+				await _socket.Send(ms, !_serializer.StreamsUtf8);
 			}
 			return await source.Task;
 		}
