@@ -8,15 +8,16 @@ namespace CommonSerializer.Json.NET
 {
 	// This project can output the Class library as a NuGet Package.
 	// To enable this option, right-click on the project and select the Properties menu item. In the Build tab select "Produce outputs on build".
-	public class JsonCommonSerializer: ICommonSerializer
+	public class JsonCommonSerializer : ICommonSerializer
 	{
 		private readonly JsonSerializer _serializer;
 
-		public JsonCommonSerializer(bool indented = false) : this(new JsonSerializer
-		{
-			TypeNameHandling = TypeNameHandling.Auto,
-			Formatting = indented ? Formatting.Indented : Formatting.None,
-		})
+		public JsonCommonSerializer(bool indented = false)
+			: this(new JsonSerializer
+				{
+					TypeNameHandling = TypeNameHandling.Auto,
+					Formatting = indented ? Formatting.Indented : Formatting.None,
+				})
 		{
 		}
 
@@ -49,13 +50,13 @@ namespace CommonSerializer.Json.NET
 			}
 		}
 
-		public object DeepClone(object t)
+		public T DeepClone<T>(T t)
 		{
 			using (var ms = new MemoryStream())
 			{
 				Serialize(t, ms);
 				ms.Position = 0;
-				return Deserialize(ms, t.GetType());
+				return (T)Deserialize(ms, t.GetType());
 
 				// alternate that will use less memory and might be faster (not tested yet):
 				//using (var writer = new BsonWriter(ms))
@@ -74,14 +75,14 @@ namespace CommonSerializer.Json.NET
 
 		public object Deserialize(TextReader reader, Type type)
 		{
-			using (var jsonReader = new JsonTextReader(reader))
+			using (var jsonReader = new JsonTextReader(reader) { CloseInput = false })
 				return _serializer.Deserialize(jsonReader, type);
 		}
 
 		public object Deserialize(Stream stream, Type type)
 		{
 			using (var utfReader = new StreamReader(stream, Encoding.UTF8, true, 2048, true))
-			using (var reader = new JsonTextReader(utfReader))
+			using (var reader = new JsonTextReader(utfReader) { CloseInput = false })
 				return _serializer.Deserialize(reader, type);
 		}
 
@@ -119,7 +120,7 @@ namespace CommonSerializer.Json.NET
 			return (T)Deserialize(container, typeof(T));
 		}
 
-		private class JTokenContainer: JObject, ISerializedContainer
+		private class JTokenContainer : JObject, ISerializedContainer
 		{
 		}
 
@@ -132,7 +133,7 @@ namespace CommonSerializer.Json.NET
 		{
 			var sb = new StringBuilder();
 			using (var stringWriter = new StringWriter(sb))
-			using (var writer = new JsonTextWriter(stringWriter))
+			using (var writer = new JsonTextWriter(stringWriter) { CloseOutput = false })
 				_serializer.Serialize(writer, t, typeof(T));
 
 			return sb.ToString();
@@ -140,14 +141,14 @@ namespace CommonSerializer.Json.NET
 
 		public void Serialize<T>(T t, TextWriter writer)
 		{
-			using (var jsonWriter = new JsonTextWriter(writer))
+			using (var jsonWriter = new JsonTextWriter(writer) { CloseOutput = false })
 				_serializer.Serialize(jsonWriter, t, typeof(T));
 		}
 
 		public void Serialize<T>(T t, Stream stream)
 		{
 			using (var utfWriter = new StreamWriter(stream, Encoding.UTF8, 2048, true))
-			using (var jsonWriter = new JsonTextWriter(utfWriter))
+			using (var jsonWriter = new JsonTextWriter(utfWriter) { CloseOutput = false })
 				_serializer.Serialize(jsonWriter, t, typeof(T));
 		}
 

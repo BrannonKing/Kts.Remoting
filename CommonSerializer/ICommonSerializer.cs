@@ -26,6 +26,6 @@ namespace CommonSerializer
 		object Deserialize(TextReader reader, Type type);
 		object Deserialize(string str, Type type);
 
-		object DeepClone(object t);
+		T DeepClone<T>(T t);
 	}
 }

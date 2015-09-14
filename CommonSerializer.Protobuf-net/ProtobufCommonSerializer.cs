@@ -47,9 +47,9 @@ namespace CommonSerializer.ProtobufNet
 			}
 		}
 
-		public object DeepClone(object t)
+		public T DeepClone<T>(T t)
 		{
-			return _runtime.DeepClone(t);
+			return (T)_runtime.DeepClone(t);
 		}
 
 		public object Deserialize(string str, Type type)

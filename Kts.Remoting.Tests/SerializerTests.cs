@@ -1,15 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using CommonSerializer;
+using CommonSerializer.Json.NET;
+using CommonSerializer.ProtobufNet;
+using Xunit;
 
 namespace Kts.Remoting.Tests
 {
 	public class SerializerTests
 	{
-		public void Test1()
+		private IEnumerable<ICommonSerializer> Serializers
+		{
+			get
+			{
+				yield return new JsonCommonSerializer();
+				yield return new ProtobufCommonSerializer();
+			}
+		} 
+
+		[Fact]
+		public void RoundTrip()
 		{
 			var data = new TestData
 			{
@@ -30,6 +45,56 @@ namespace Kts.Remoting.Tests
 				DontGo = 42,
 				Children = new List<SubTestData> {new SubTestData {Name = "one"}, new SubTestData {Name = "two"}}
 			};
+
+			foreach (var serializer in Serializers)
+			{
+				using (var stream = new MemoryStream())
+				{
+					serializer.Serialize(data, stream);
+					stream.Position = 0;
+					var result = serializer.Deserialize<TestData>(stream);
+					VerifyEqual(data, result);
+				}
+
+				using (var stream = new MemoryStream())
+				using (var writer = new StreamWriter(stream))
+				{
+					serializer.Serialize(data, writer);
+					writer.Flush();
+					stream.Position = 0;
+					using (var reader = new StreamReader(stream))
+					{
+						var result = serializer.Deserialize<TestData>(reader);
+						VerifyEqual(data, result);
+					}
+				}
+
+				var str = serializer.Serialize(data);
+				var result2 = serializer.Deserialize<TestData>(str);
+				VerifyEqual(data, result2);
+
+				var clone = serializer.DeepClone(data);
+				VerifyEqual(data, clone);
+			}
+		}
+
+		private void VerifyEqual(TestData data, TestData result)
+		{
+			Assert.Equal(data.Children, result.Children);
+			Assert.NotEqual(data.DontGo, result.DontGo);
+			Assert.Equal(data.TestBool, result.TestBool);
+			Assert.Equal(data.TestByte, result.TestByte);
+			Assert.Equal(data.TestByteArray, result.TestByteArray);
+			Assert.Equal(data.TestChar, result.TestChar);
+			Assert.Equal(data.TestDateTime, result.TestDateTime);
+			Assert.Equal(data.TestDecimal, result.TestDecimal);
+			Assert.Equal(data.TestDouble, result.TestDouble);
+			Assert.Equal(data.TestInt, result.TestInt);
+			Assert.Equal(data.TestList, result.TestList);
+			Assert.Equal(data.TestLong, result.TestLong);
+			Assert.Equal(data.TestShort, result.TestShort);
+			Assert.Equal(data.TestString, result.TestString);
+			Assert.Equal(data.TestuInt, result.TestuInt);
 		}
 
 		[DataContract]
@@ -98,6 +163,12 @@ namespace Kts.Remoting.Tests
 			{
 				return Name.GetHashCode();
 			}
+		}
+
+		[Fact]
+		public void TestPartialCreation()
+		{
+			
 		}
 	}
 }
