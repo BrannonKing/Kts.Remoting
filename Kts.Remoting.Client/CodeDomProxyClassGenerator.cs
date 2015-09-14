@@ -3,14 +3,13 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using CommonSerializer;
 
 namespace Kts.Remoting.Client
 {
-	public class CodeDomProxyGenerator : IProxyGenerator
+	public class CodeDomProxyClassGenerator : IProxyClassGenerator
 	{
 		internal string GenerateClassDefinition<T>(string className)
 		{
@@ -24,7 +23,7 @@ namespace Kts.Remoting.Client
 			sb.Append("\tpublic ");
 			sb.Append(className);
 			sb.Append("(");
-			sb.Append(typeof(IProxyWebSocket).FullName);
+			sb.Append(typeof(ICommonWebSocket).FullName);
 			sb.Append(" socket, ");
 			sb.Append(typeof(ICommonSerializer).FullName);
 			sb.AppendLine(" serializer, string hubName) : base(socket, serializer, hubName) {}");
@@ -159,7 +158,7 @@ namespace Kts.Remoting.Client
 				throw new Exception("Unable to compile installer package. Message: " + string.Join(". ", results.Errors));
 		}
 
-		public T Create<T>()
+		public T Create<T>(ICommonWebSocket socket, ICommonSerializer serializer)
 		{
 			var className = "ProxyFor" + typeof(T).Name;
 			var def = GenerateClassDefinition<T>(className);
@@ -167,8 +166,10 @@ namespace Kts.Remoting.Client
 
 			var hubName = typeof(T).Name; // for now
 			var type = Type.GetType(className);
+			if (type == null)
+				throw new Exception("Failed to get type " + className);
 
-			return (T)Activator.CreateInstance(type, _socket, _serializer, hubName);
+			return (T)Activator.CreateInstance(type, socket, serializer, hubName);
 		}
 	}
 }

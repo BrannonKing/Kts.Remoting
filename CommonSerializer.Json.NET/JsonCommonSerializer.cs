@@ -1,18 +1,15 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json.Linq;
 
 namespace CommonSerializer.Json.NET
 {
-    // This project can output the Class library as a NuGet Package.
-    // To enable this option, right-click on the project and select the Properties menu item. In the Build tab select "Produce outputs on build".
-    public class JsonCommonSerializer: ICommonSerializer
-    {
+	// This project can output the Class library as a NuGet Package.
+	// To enable this option, right-click on the project and select the Properties menu item. In the Build tab select "Produce outputs on build".
+	public class JsonCommonSerializer: ICommonSerializer
+	{
 		private readonly JsonSerializer _serializer;
 
 		public JsonCommonSerializer(bool indented = false) : this(new JsonSerializer
@@ -20,8 +17,8 @@ namespace CommonSerializer.Json.NET
 			TypeNameHandling = TypeNameHandling.Auto,
 			Formatting = indented ? Formatting.Indented : Formatting.None,
 		})
-        {
-        }
+		{
+		}
 
 		public JsonCommonSerializer(JsonSerializer serializer)
 		{

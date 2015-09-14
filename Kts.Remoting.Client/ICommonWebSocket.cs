@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 
 namespace Kts.Remoting.Client
 {
-	public interface IProxyWebSocket: IDisposable
+	public interface ICommonWebSocket: IDisposable
 	{
 		Task Send(Stream bytes, bool binary);
-		event Action<ArraySegment<byte>> Received;
+		event Action<Stream> Received;
 	}
 }

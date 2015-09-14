@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonSerializer", "CommonSerializer\CommonSerializer.csproj", "{6D8F5C82-4826-4008-90C1-0B8C4023C075}"
 EndProject
@@ -14,6 +14,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Server", "Kts.Remoting.Server\Kts.Remoting.Server.csproj", "{8D5EB1D5-D853-4428-9BC0-3D24C72DD49B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Client", "Kts.Remoting.Client\Kts.Remoting.Client.csproj", "{57126D8A-ADCC-41EA-BE7F-32BA0170C68A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Client.WebSocketSharp", "Kts.Remoting.Client.WebSocketSharp\Kts.Remoting.Client.WebSocketSharp.csproj", "{63B36AB8-6757-4C04-934E-1CFD6EC14AD6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{57126D8A-ADCC-41EA-BE7F-32BA0170C68A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57126D8A-ADCC-41EA-BE7F-32BA0170C68A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{57126D8A-ADCC-41EA-BE7F-32BA0170C68A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63B36AB8-6757-4C04-934E-1CFD6EC14AD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63B36AB8-6757-4C04-934E-1CFD6EC14AD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63B36AB8-6757-4C04-934E-1CFD6EC14AD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63B36AB8-6757-4C04-934E-1CFD6EC14AD6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

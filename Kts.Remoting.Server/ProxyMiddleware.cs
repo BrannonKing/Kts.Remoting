@@ -6,7 +6,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Owin;
@@ -132,8 +131,9 @@ namespace Kts.Remoting.Server
 
 			}
 
-			var buffer = new byte[_options.MessageBufferSize];
-			var count = 0;
+			var buffer = new byte[4096];
+
+			Stream stream = new MemoryStream();
 
 			// make sure thread username gets propagated to the handler thread
 			// should we have a connectionID -- some random number here? maybe it's in the context?
@@ -147,11 +147,12 @@ namespace Kts.Remoting.Server
 						break;
 
 					WebSocketReceiveTuple received;
+					stream.SetLength(0);
 					do
 					{
-						var segment = new ArraySegment<byte>(buffer, count, buffer.Length - count);
+						var segment = new ArraySegment<byte>(buffer, 0, buffer.Length);
 						received = await _receiveAsync.Invoke(segment, _options.CancellationToken);
-						count += received.Item3;
+						stream.Write(segment.Array, segment.Offset, received.Item3);
 					} while (!received.Item2 && !_options.CancellationToken.IsCancellationRequested);
 
 					if (_options.CancellationToken.IsCancellationRequested)
@@ -166,11 +167,10 @@ namespace Kts.Remoting.Server
 
 					// decompress the thing
 					// deserialize the thing
-					Stream stream = new MemoryStream(buffer, 0, count, false);
-					var serializer = isUTF8 ? _options.TextSerializer : _options.BinarySerializer;
+					var serializer = _options.Serializer;
 
 					Message message;
-                    try
+					try
 					{
 						if (isCompressed)
 							stream = new DeflateStream(stream, CompressionMode.Decompress, false);
@@ -182,16 +182,27 @@ namespace Kts.Remoting.Server
 						stream.Dispose();
 					}
 
+					// options for deserializing the parameters:
+					// 1. find the method based on name and count. Overloads with the same parameter count will be disallowed.
+					// 2. send the parameters in an ordered dictionary by name. Overloads with conflicting names would be disallowed.
+					// 3. use the method name alone: overloads would be disallowed.
+					// 4. attempt to deserialize the parameters without passing in any type information
+					// 5. #1 plus some attempt at extracting string-typed items before method resolution
+
 					var service = _options.Services[message.Hub];
 					var method = GetMethodDelegateFromCache(service, message);
-					method.Method.Parameters
-                    try
+					
+					try
 					{
 						if (method == null)
 							_options.FireOnError(new MissingMethodException(message.Hub, message.Method));
 						else
 						{
-							var ret = method.Invoke(service, message.Arguments);
+							var parameters = method.GetParameters();
+							var arguments = new object[parameters.Length];
+							for (int i = 0; i < parameters.Length; i++)
+								arguments[i] = serializer.Deserialize(message.Arguments, parameters[i].ParameterType);
+							var ret = method.Invoke(service, arguments);
 							if (ret is Task)
 								await (Task)ret;
 						}
@@ -229,38 +240,33 @@ namespace Kts.Remoting.Server
 		}
 
 
-		private static readonly ConcurrentDictionary<Tuple<string, string>, MethodInvoker> _methodCache = new ConcurrentDictionary<Tuple<string, string>, MethodInvoker>();
-		private MethodInvoker GetMethodDelegateFromCache(object hub, InvocationMessage message)
+		private static readonly ConcurrentDictionary<Tuple<string, string, int>, MethodInfo> _methodCache = new ConcurrentDictionary<Tuple<string, string, int>, MethodInfo>();
+		private MethodInfo GetMethodDelegateFromCache(object hub, Message message)
 		{
-			var key = Tuple.Create(message.Hub, message.Method);
+			var count = message.Arguments != null ? message.Arguments.Count : 0;
+			var key = Tuple.Create(message.Hub, message.Method, count);
 			return _methodCache.GetOrAdd(key, id =>
 			{
 				var methods = hub.GetType().GetMethods().Where(m => string.Equals(m.Name, message.Method, StringComparison.OrdinalIgnoreCase)).ToList();
 				if (methods.Count > 1)
 				{
 					// filter by parameters
-					methods = methods.Where(m => m.Parameters().Count == message.Arguments.Length).ToList();
-					if (methods.Count > 1 && message.Arguments.All(p => p != null))
-					{
-						methods = methods.Where(m => m.HasParameterSignature(message.Arguments.Select(p => p.GetType()).ToArray())).ToList();
-					}
+					methods = methods.Where(m => m.GetParameters().Length == count).ToList();
 				}
 
-				if (methods.Count <= 0)
+				if (methods.Count <= 0 && count == 1)
 				{
 					var property = hub.GetType().GetProperty(message.Method, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public);
 					if (property != null)
-						return (target, parameters) =>
-						{
-							property.DelegateForSetPropertyValue().Invoke(target, parameters.SingleOrDefault());
-							return null;
-						};
+					{
+						return property.GetSetMethod();
+					}
 				}
 
 				if (methods.Count != 1)
 					return null;
 
-				return methods[0].DelegateForCallMethod();
+				return methods[0];
 			});
 		}
 
@@ -294,7 +300,6 @@ namespace Owin
 	public class WebSocketFactoryOptions
 	{
 		internal Dictionary<string, object> Services = new Dictionary<string, object>();
-		private int _messageBufferSize = 2000000;
 		private CancellationToken _cancellationToken = CancellationToken.None;
 
 		public void AddService<T>(T service)
@@ -310,21 +315,6 @@ namespace Owin
 				throw new ArgumentNullException("name");
 
 			Services.Add(name, service);
-		}
-
-		/// <summary>
-		/// This specifies the size of the buffer allocated to receive the messages. In other words, it is the maximum size in bytes allowed for any message received on the server.
-		/// The default value is 2 million bytes (apx. 2MB) and the minimum value is 100 bytes.
-		/// </summary>
-		public int MessageBufferSize
-		{
-			get { return _messageBufferSize; }
-			set
-			{
-				if (value <= 100)
-					throw new ArgumentOutOfRangeException("value", "Value must be greater than 100 bytes.");
-				_messageBufferSize = value;
-			}
 		}
 
 		/// <summary>

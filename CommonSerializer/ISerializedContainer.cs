@@ -2,5 +2,6 @@
 {
 	public interface ISerializedContainer
 	{
+		int Count { get; }
 	}
 }

@@ -1,17 +1,14 @@
-﻿using ProtoBuf.Meta;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
+﻿using System;
 using System.IO;
-using ProtoBuf;
+using System.Reflection;
 using System.Text;
+using ProtoBuf;
+using ProtoBuf.Meta;
 
 namespace CommonSerializer.ProtobufNet
 {
-    public class ProtobufCommonSerializer: ICommonSerializer
-    {
+	public class ProtobufCommonSerializer: ICommonSerializer
+	{
 		private readonly RuntimeTypeModel _runtime;
 
 		public ProtobufCommonSerializer(MethodInfo classFactory = null)
@@ -31,7 +28,7 @@ namespace CommonSerializer.ProtobufNet
 			get
 			{
 				return "M. Gravell's Protocol Buffers Implementation";
-            }
+			}
 		}
 
 		public string Name
@@ -103,7 +100,7 @@ namespace CommonSerializer.ProtobufNet
 		public T Deserialize<T>(ISerializedContainer container)
 		{
 			return (T)Deserialize(container, typeof(T));
-        }
+		}
 
 		public ISerializedContainer GenerateContainer()
 		{
@@ -121,7 +118,7 @@ namespace CommonSerializer.ProtobufNet
 			using (var stringWriter = new StringWriter(sb))
 				Serialize<T>(t, stringWriter);
 			return sb.ToString();
-        }
+		}
 
 		public void Serialize<T>(T t, TextWriter writer)
 		{
@@ -146,6 +143,7 @@ namespace CommonSerializer.ProtobufNet
 				throw new ArgumentException("Invalid container type. Use the GenerateContainer method.");
 
 			Serialize<T>(t, psc.Stream);
+			psc.Count++;
 		}
 	}
 }

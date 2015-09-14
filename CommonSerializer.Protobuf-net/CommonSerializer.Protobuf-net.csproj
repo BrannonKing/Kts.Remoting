@@ -8,7 +8,7 @@
     <ProjectGuid>{2CA64CC8-E1E2-4680-8B3A-A793F3B70D74}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CommonSerializer.Protobuf_net</RootNamespace>
+    <RootNamespace>CommonSerializer.ProtobufNet</RootNamespace>
     <AssemblyName>CommonSerializer.Protobuf-net</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <FileAlignment>512</FileAlignment>

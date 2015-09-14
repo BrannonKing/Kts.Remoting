@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.IO;
 
 namespace CommonSerializer.ProtobufNet
 {
 	[ProtoBuf.ProtoContract(UseProtoMembersOnly = true)]
-	public class ProtobufSerializedContainer : ISerializedContainer
+	internal class ProtobufSerializedContainer : ISerializedContainer
 	{
 		private MemoryStream _stream = new MemoryStream();
 
@@ -19,5 +15,8 @@ namespace CommonSerializer.ProtobufNet
 			get { return _stream.ToArray(); } // need to flush first?
 			set { _stream = new MemoryStream(value, false); }
 		}
+
+		[ProtoBuf.ProtoMember(2)]
+		public int Count { get; internal set; }
 	}
 }

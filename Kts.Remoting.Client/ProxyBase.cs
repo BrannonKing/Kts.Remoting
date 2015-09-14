@@ -9,12 +9,12 @@ namespace Kts.Remoting.Client
 {
 	class ProxyBase: IDisposable
 	{
-		private readonly IProxyWebSocket _socket;
+		private readonly ICommonWebSocket _socket;
 		protected readonly ICommonSerializer _serializer;
 		private readonly ConcurrentDictionary<Message, dynamic> _sentMessages = new ConcurrentDictionary<Message, dynamic>();
 		private readonly string _hubName;
 
-		protected ProxyBase(IProxyWebSocket socket, ICommonSerializer serializer, string hubName)
+		protected ProxyBase(ICommonWebSocket socket, ICommonSerializer serializer, string hubName)
 		{
 			_hubName = hubName;
 			_socket = socket;
@@ -62,11 +62,9 @@ namespace Kts.Remoting.Client
 			_socket.Received -= OnReceived;
 		}
 
-		private void OnReceived(ArraySegment<byte> bytes)
+		private void OnReceived(Stream stream)
 		{
-			Message message;
-			using (var ms = new MemoryStream(bytes.Array, bytes.Offset, bytes.Count, false))
-				message = _serializer.Deserialize<Message>(ms);
+			var message = _serializer.Deserialize<Message>(stream);
 
 			dynamic source;
 			if (_sentMessages.TryRemove(message, out source))
