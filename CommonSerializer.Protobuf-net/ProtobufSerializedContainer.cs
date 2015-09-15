@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace CommonSerializer.ProtobufNet
 {
@@ -18,5 +19,21 @@ namespace CommonSerializer.ProtobufNet
 
 		[ProtoBuf.ProtoMember(2)]
 		public int Count { get; internal set; }
+
+		public bool CanRead
+		{
+			get
+			{
+				return _stream.Position < _stream.Length;
+			}
+		}
+
+		public bool CanWrite
+		{
+			get
+			{
+				return _stream.Position >= _stream.Length;
+			}
+		}
 	}
 }

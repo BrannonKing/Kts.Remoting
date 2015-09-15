@@ -21,7 +21,7 @@ namespace Kts.Remoting.Tests
 				yield return new JsonCommonSerializer();
 				yield return new ProtobufCommonSerializer();
 			}
-		} 
+		}
 
 		[Fact]
 		public void RoundTrip()
@@ -29,12 +29,12 @@ namespace Kts.Remoting.Tests
 			var data = new TestData
 			{
 				TestBool = true,
-				TestByteArray = new byte[] {0x00, 0x02, 0x04, 0x05, 0x01},
+				TestByteArray = new byte[] { 0x00, 0x02, 0x04, 0x05, 0x01 },
 				TestDouble = 7.0,
 				TestByte = 0xff,
 				TestDateTime = new DateTime(2089, 9, 27),
 				TestInt = 7,
-				TestList = new List<int> {4, 55, 4, 6, 7},
+				TestList = new List<int> { 4, 55, 4, 6, 7 },
 				TestLong = 777,
 				TestShort = 456,
 				TestString = "Hello World!",
@@ -43,7 +43,7 @@ namespace Kts.Remoting.Tests
 				TestsByte = 0x05,
 				TestuInt = 80,
 				DontGo = 42,
-				Children = new List<SubTestData> {new SubTestData {Name = "one"}, new SubTestData {Name = "two"}}
+				Children = new List<SubTestData> { new SubTestData { Name = "one" }, new SubTestData { Name = "two" } }
 			};
 
 			foreach (var serializer in Serializers)
@@ -156,7 +156,7 @@ namespace Kts.Remoting.Tests
 
 			public override bool Equals(object obj)
 			{
-				return Name == ((SubTestData) obj).Name;
+				return Name == ((SubTestData)obj).Name;
 			}
 
 			public override int GetHashCode()
@@ -165,10 +165,47 @@ namespace Kts.Remoting.Tests
 			}
 		}
 
+		[DataContract]
+		private class ContainerWrapper
+		{
+			[DataMember(Order = 1)]
+			public ISerializedContainer Container { get; set; }
+		}
+
 		[Fact]
 		public void TestPartialCreation()
 		{
-			
+			foreach (var serializer in Serializers)
+			{
+				var container = serializer.GenerateContainer();
+				Assert.True(container.CanWrite);
+
+				serializer.Serialize("howdy", container);
+				serializer.Serialize(42, container);
+				serializer.Serialize(101.7, container);
+				var st = new SubTestData { Name = "nm1" };
+                serializer.Serialize(st, container);
+
+				Assert.Equal(4, container.Count);
+				Assert.True(container.CanWrite);
+
+				var wrapper = new ContainerWrapper { Container = container };
+
+				ContainerWrapper wrapper2;
+				using(var ms = new MemoryStream())
+				{
+					serializer.Serialize(wrapper, ms);
+					wrapper2 = serializer.Deserialize<ContainerWrapper>(ms);
+				}
+
+				Assert.True(container.CanRead);
+				Assert.Equal("howdy", serializer.Deserialize<string>(container));
+				Assert.Equal(42, serializer.Deserialize<int>(container));
+				Assert.Equal(101.7, serializer.Deserialize<double>(container));
+				Assert.Equal(st, serializer.Deserialize<SubTestData>(container));
+
+				Assert.False(container.CanRead);
+			}
 		}
 	}
 }

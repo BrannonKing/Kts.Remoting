@@ -122,6 +122,21 @@ namespace CommonSerializer.Json.NET
 
 		private class JTokenContainer : JObject, ISerializedContainer
 		{
+			public bool CanRead
+			{
+				get
+				{
+					return HasValues;
+				}
+			}
+
+			public bool CanWrite
+			{
+				get
+				{
+					return true;
+				}
+			}
 		}
 
 		public ISerializedContainer GenerateContainer()
