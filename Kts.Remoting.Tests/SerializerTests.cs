@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 using CommonSerializer;
 using CommonSerializer.Json.NET;
 using CommonSerializer.ProtobufNet;
@@ -184,7 +181,7 @@ namespace Kts.Remoting.Tests
 				serializer.Serialize(42, container);
 				serializer.Serialize(101.7, container);
 				var st = new SubTestData { Name = "nm1" };
-                serializer.Serialize(st, container);
+				serializer.Serialize(st, container);
 
 				Assert.Equal(4, container.Count);
 				Assert.True(container.CanWrite);

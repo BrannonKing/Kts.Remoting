@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.Text;
-using Newtonsoft.Json.Linq;
 
 namespace CommonSerializer.Json.NET
 {
@@ -89,13 +88,13 @@ namespace CommonSerializer.Json.NET
 
 		public object Deserialize(ISerializedContainer container, Type type)
 		{
-			var jTokenContainer = container as JTokenContainer;
+			var jTokenContainer = container as JArrayContainer;
 			if (jTokenContainer == null)
 				throw new ArgumentException("Invalid container. Use the GenerateContainer method.");
 
-			if (jTokenContainer.HasValues)
+			if (jTokenContainer.Array.HasValues)
 			{
-				var first = jTokenContainer.First;
+				var first = jTokenContainer.Array.First;
 				first.Remove();
 				using (var reader = first.CreateReader())
 					return _serializer.Deserialize(reader, type);
@@ -123,28 +122,9 @@ namespace CommonSerializer.Json.NET
 			return (T)Deserialize(container, typeof(T));
 		}
 
-		private class JTokenContainer : JArray, ISerializedContainer
-		{
-			public bool CanRead
-			{
-				get
-				{
-					return HasValues;
-				}
-			}
-
-			public bool CanWrite
-			{
-				get
-				{
-					return true;
-				}
-			}
-		}
-
 		public ISerializedContainer GenerateContainer()
 		{
-			return new JTokenContainer();
+			return new JArrayContainer();
 		}
 
 		public string Serialize<T>(T t)
@@ -172,30 +152,12 @@ namespace CommonSerializer.Json.NET
 
 		public void Serialize<T>(T t, ISerializedContainer container)
 		{
-			var jTokenContainer = container as JTokenContainer;
+			var jTokenContainer = container as JArrayContainer;
 			if (jTokenContainer == null)
 				throw new ArgumentException("Invalid container. Use the GenerateContainer method.");
 
-			using (var writer = new JTokenWriter(jTokenContainer))
+			using (var writer = jTokenContainer.Array.CreateWriter())
 				_serializer.Serialize(writer, t, typeof(T));
-		}
-
-		private class SerializedContainerConverter : JsonConverter
-		{
-			public override bool CanConvert(Type objectType)
-			{
-				return objectType == typeof(JTokenContainer);
-			}
-
-			public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-			{
-				return serializer.Deserialize<JTokenContainer>(reader);
-			}
-
-			public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-			{
-				serializer.Serialize(writer, value, typeof(JArray));
-			}
 		}
 	}
 }
