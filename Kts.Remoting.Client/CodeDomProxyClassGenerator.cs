@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
@@ -6,26 +7,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CommonSerializer;
+using Microsoft.CSharp;
 
 namespace Kts.Remoting.Client
 {
 	public class CodeDomProxyClassGenerator : IProxyClassGenerator
 	{
+		private readonly CSharpCodeProvider _provider = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
+
 		internal string GenerateClassDefinition<T>(string className)
 		{
 			var sb = new StringBuilder();
-			sb.Append("class ");
+			sb.AppendLine("[assembly: System.Runtime.Versioning.TargetFramework(\".NETFramework,Version=v4.5.1\")]");
+			sb.Append("public class ");
 			sb.Append(className);
 			sb.Append(": Kts.Remoting.Client.ProxyBase, ");
-			sb.AppendLine(typeof(T).FullName);
+			sb.AppendLine(FormatType(typeof(T)));
 			sb.AppendLine("{");
 
 			sb.Append("\tpublic ");
 			sb.Append(className);
 			sb.Append("(");
-			sb.Append(typeof(ICommonWebSocket).FullName);
+			sb.Append(FormatType(typeof(ICommonWebSocket)));
 			sb.Append(" socket, ");
-			sb.Append(typeof(ICommonSerializer).FullName);
+			sb.Append(FormatType(typeof(ICommonSerializer)));
 			sb.AppendLine(" serializer, string hubName) : base(socket, serializer, hubName) {}");
 
 			var methods = typeof(T).GetMethods();
@@ -35,7 +40,7 @@ namespace Kts.Remoting.Client
 					throw new NotSupportedException("Expected all methods to return type Task (or Task<>).");
 
 				sb.Append("\tpublic ");
-				sb.Append(method.ReturnType.FullName);
+				sb.Append(FormatType(method.ReturnType));
 				sb.Append(" ");
 				sb.Append(method.Name);
 				if (method.ContainsGenericParameters)
@@ -43,7 +48,7 @@ namespace Kts.Remoting.Client
 					sb.Append('<');
 					foreach (var generic in method.GetGenericArguments())
 					{
-						sb.Append(generic.FullName);
+						sb.Append(FormatType(generic));
 						sb.Append(",");
 					}
 					sb[sb.Length - 1] = '>';
@@ -52,7 +57,7 @@ namespace Kts.Remoting.Client
 				var parameters = method.GetParameters();
 				for(int i = 0; i < parameters.Length; i++)
 				{
-					sb.Append(parameters[i].ParameterType.FullName);
+					sb.Append(FormatType(parameters[i].ParameterType));
 					sb.Append(" ");
 					sb.Append(parameters[i].Name);
 					if (i < parameters.Length - 1)
@@ -61,7 +66,7 @@ namespace Kts.Remoting.Client
 				sb.AppendLine(")");
 				sb.AppendLine("\t{");
 				sb.Append("\t\tvar msg = new ");
-				sb.Append(typeof(Message).FullName);
+				sb.Append(FormatType(typeof(Message)));
 				sb.AppendLine("();");
 				sb.Append("\t\tmsg.Method = \"");
 				sb.Append(method.Name);
@@ -80,7 +85,7 @@ namespace Kts.Remoting.Client
 				if (method.ReturnType == typeof(Task))
 					sb.Append("bool");
 				else
-					sb.Append(method.ReturnType.GetGenericArguments().Single().FullName);
+					sb.Append(FormatType(method.ReturnType.GetGenericArguments().Single()));
 				sb.AppendLine(">(msg);");
 				sb.AppendLine("\t}");
 			}
@@ -89,14 +94,18 @@ namespace Kts.Remoting.Client
 			return sb.ToString();
 		}
 
+		private string FormatType(Type t)
+		{
+			return _provider.GetTypeOutput(new CodeTypeReference(t));
+		}
+
 		internal void CompileAndLoadClassDefinition<T>(string def)
 		{
-			var provider = CodeDomProvider.CreateProvider("CSharp");
 			var cp = new CompilerParameters();
 
 			// Generate an executable instead of  
 			// a class library.
-			cp.GenerateExecutable = true;
+			cp.GenerateExecutable = false;
 
 			// Set the assembly file name to generate.
 			//cp.OutputAssembly = newExeFilename;
@@ -105,16 +114,23 @@ namespace Kts.Remoting.Client
 			cp.IncludeDebugInformation = false;
 
 			// Add an assembly reference.
-			var references = new HashSet<string>{"System"};
+			var references = new HashSet<string>
+			{
+				typeof(T).Assembly.Location,
+				typeof(ICommonSerializer).Assembly.Location,
+				typeof(ICommonWebSocket).Assembly.Location,
+				typeof(Stream).Assembly.Location,
+				typeof(Task).Assembly.Location,
+			};
 			foreach (var type in typeof(T).GetInterfaces())
 				references.Add(type.Assembly.GetName().Name);
 			foreach (var method in typeof(T).GetMethods())
 			{
 				foreach (var type in method.GetGenericArguments())
-					references.Add(type.Assembly.GetName().Name);
+					references.Add(type.Assembly.Location);
 				foreach (var type in method.GetParameters().Select(p => p.ParameterType))
-					references.Add(type.Assembly.GetName().Name);
-				references.Add(method.ReturnType.Assembly.GetName().Name);
+					references.Add(type.Assembly.Location);
+				references.Add(method.ReturnType.Assembly.Location);
 			}
 
 			foreach (var assembly in references)
@@ -152,7 +168,7 @@ namespace Kts.Remoting.Client
 			//var aa = "[assembly: System.Reflection.AssemblyFileVersionAttribute(" + fileVersion.ConstructorArguments[0] + ")]" + Environment.NewLine;
 			//aa += "[assembly: System.Reflection.AssemblyVersionAttribute(" + prodVersion.ConstructorArguments[0] + ")]" + Environment.NewLine;
 			
-			var results = provider.CompileAssemblyFromSource(cp, def);
+				var results = _provider.CompileAssemblyFromSource(cp, def);
 
 			if (results.Errors.HasErrors)
 				throw new Exception("Unable to compile installer package. Message: " + string.Join(". ", results.Errors));

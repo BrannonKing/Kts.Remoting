@@ -75,9 +75,9 @@ namespace Kts.Remoting.Client
 			public event Action<Stream> Received = delegate { };
 		}
 
-		public static void RegisterInterface<T>(this ClientWebSocket socket, IProxyClassGenerator generator, ICommonSerializer serializer) where T : class
+		public static T RegisterInterface<T>(this ClientWebSocket socket, IProxyClassGenerator generator, ICommonSerializer serializer) where T : class
 		{
-			generator.Create<T>(new ClientWebSocketCommonizer(socket),  serializer);
+			return generator.Create<T>(new ClientWebSocketCommonizer(socket),  serializer);
 		}
 	}
 }

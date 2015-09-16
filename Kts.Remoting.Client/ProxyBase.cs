@@ -7,7 +7,7 @@ using CommonSerializer;
 
 namespace Kts.Remoting.Client
 {
-	class ProxyBase: IDisposable
+	public abstract class ProxyBase: IDisposable
 	{
 		private readonly ICommonWebSocket _socket;
 		protected readonly ICommonSerializer _serializer;

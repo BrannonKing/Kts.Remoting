@@ -81,12 +81,12 @@ namespace Kts.Remoting.Server
 
 	public class ProxyMiddleware : OwinMiddleware
 	{
-		private readonly WebSocketFactoryOptions _options;
+		private readonly OptionsForProxiedServices _options;
 		private WebSocketSendAsync _sendAsync;
 		private WebSocketReceiveAsync _receiveAsync;
 		private WebSocketCloseAsync _closeAsync;
 
-		public ProxyMiddleware(OwinMiddleware next, WebSocketFactoryOptions options)
+		public ProxyMiddleware(OwinMiddleware next, OptionsForProxiedServices options)
 			: base(next)
 		{
 			_options = options;
@@ -297,7 +297,7 @@ namespace Owin
 {
 	using Kts.Remoting.Server;
 
-	public class WebSocketFactoryOptions
+	public class OptionsForProxiedServices
 	{
 		internal Dictionary<string, object> Services = new Dictionary<string, object>();
 		private CancellationToken _cancellationToken = CancellationToken.None;
@@ -354,7 +354,7 @@ namespace Owin
 
 	public static class OwinExtension
 	{
-		public static void AddWebSocketProxy(this IAppBuilder app, string route, WebSocketFactoryOptions options)
+		public static void AddProxiedServices(this IAppBuilder app, string route, OptionsForProxiedServices options)
 		{
 			app.Map(route, config => config.Use<ProxyMiddleware>(options));
 		}
