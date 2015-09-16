@@ -24,6 +24,7 @@ namespace CommonSerializer.Json.NET
 		public JsonCommonSerializer(JsonSerializer serializer)
 		{
 			_serializer = serializer;
+			_serializer.Converters.Add(new SerializedContainerConverter());
 		}
 
 		public string Description
@@ -94,7 +95,9 @@ namespace CommonSerializer.Json.NET
 
 			if (jTokenContainer.HasValues)
 			{
-				using (var reader = new JTokenReader(jTokenContainer))
+				var first = jTokenContainer.First;
+				first.Remove();
+				using (var reader = first.CreateReader())
 					return _serializer.Deserialize(reader, type);
 			}
 			return null;
@@ -120,7 +123,7 @@ namespace CommonSerializer.Json.NET
 			return (T)Deserialize(container, typeof(T));
 		}
 
-		private class JTokenContainer : JObject, ISerializedContainer
+		private class JTokenContainer : JArray, ISerializedContainer
 		{
 			public bool CanRead
 			{
@@ -175,6 +178,24 @@ namespace CommonSerializer.Json.NET
 
 			using (var writer = new JTokenWriter(jTokenContainer))
 				_serializer.Serialize(writer, t, typeof(T));
+		}
+
+		private class SerializedContainerConverter : JsonConverter
+		{
+			public override bool CanConvert(Type objectType)
+			{
+				return objectType == typeof(JTokenContainer);
+			}
+
+			public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+			{
+				return serializer.Deserialize<JTokenContainer>(reader);
+			}
+
+			public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+			{
+				serializer.Serialize(writer, value, typeof(JArray));
+			}
 		}
 	}
 }

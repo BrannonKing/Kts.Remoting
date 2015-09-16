@@ -16,6 +16,7 @@ namespace CommonSerializer.ProtobufNet
 			_runtime = TypeModel.Create();
 			if (classFactory != null)
 				_runtime.SetDefaultFactory(classFactory);
+			RegisterSubtype<ISerializedContainer, ProtobufSerializedContainer>(1);
 		}
 
 		public ProtobufCommonSerializer(RuntimeTypeModel runtime)

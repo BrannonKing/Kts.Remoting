@@ -195,9 +195,11 @@ namespace Kts.Remoting.Tests
 				using(var ms = new MemoryStream())
 				{
 					serializer.Serialize(wrapper, ms);
+					ms.Position = 0;
 					wrapper2 = serializer.Deserialize<ContainerWrapper>(ms);
 				}
 
+				container = wrapper2.Container;
 				Assert.True(container.CanRead);
 				Assert.Equal("howdy", serializer.Deserialize<string>(container));
 				Assert.Equal(42, serializer.Deserialize<int>(container));
