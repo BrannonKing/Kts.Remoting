@@ -30,10 +30,17 @@ namespace Kts.Remoting.Client
 
 				do
 				{
+					if (_socket.State != WebSocketState.Open)
+					{
+						await Task.Delay(10);
+						continue;
+					}
 					using (var ms = new MemoryStream())
 					{
 						var segment = new ArraySegment<byte>(buffer, 0, buffer.Length);
 						var result = await _socket.ReceiveAsync(segment, _cancellationToken);
+						if (result.CloseStatus != WebSocketCloseStatus.Empty)
+							break;
 						if (result.Count > 0)
 							ms.Write(segment.Array, segment.Offset, segment.Count);
 						if (result.EndOfMessage)
