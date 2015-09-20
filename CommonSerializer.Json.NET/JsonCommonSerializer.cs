@@ -13,10 +13,10 @@ namespace CommonSerializer.Json.NET
 
 		public JsonCommonSerializer(bool indented = false)
 			: this(new JsonSerializer
-				{
-					TypeNameHandling = TypeNameHandling.Auto,
-					Formatting = indented ? Formatting.Indented : Formatting.None,
-				})
+			{
+				TypeNameHandling = TypeNameHandling.Auto,
+				Formatting = indented ? Formatting.Indented : Formatting.None,
+			})
 		{
 		}
 
@@ -54,7 +54,7 @@ namespace CommonSerializer.Json.NET
 		{
 			using (var ms = new MemoryStream())
 			{
-				Serialize(t, ms);
+				Serialize(ms, t);
 				ms.Position = 0;
 				return (T)Deserialize(ms, t.GetType());
 
@@ -127,37 +127,57 @@ namespace CommonSerializer.Json.NET
 			return new JArrayContainer();
 		}
 
-		public string Serialize<T>(T t)
+		public string Serialize<T>(T value)
+		{
+			return Serialize(value, typeof(T));
+		}
+
+		public string Serialize(object value, Type type)
 		{
 			var sb = new StringBuilder();
 			using (var stringWriter = new StringWriter(sb))
 			using (var writer = new JsonTextWriter(stringWriter) { CloseOutput = false })
-				_serializer.Serialize(writer, t, typeof(T));
+				_serializer.Serialize(writer, value, type);
 
 			return sb.ToString();
 		}
 
-		public void Serialize<T>(T t, TextWriter writer)
+		public void Serialize<T>(TextWriter writer, T value)
 		{
-			using (var jsonWriter = new JsonTextWriter(writer) { CloseOutput = false })
-				_serializer.Serialize(jsonWriter, t, typeof(T));
+			Serialize(writer, value, typeof(T));
 		}
 
-		public void Serialize<T>(T t, Stream stream)
+		public void Serialize(TextWriter writer, object value, Type type)
+		{
+			using (var jsonWriter = new JsonTextWriter(writer) { CloseOutput = false })
+				_serializer.Serialize(jsonWriter, value, type);
+		}
+
+		public void Serialize<T>(Stream stream, T value)
+		{
+			Serialize(stream, value, typeof(T));
+		}
+
+		public void Serialize(Stream stream, object value, Type type)
 		{
 			using (var utfWriter = new StreamWriter(stream, Encoding.UTF8, 2048, true))
 			using (var jsonWriter = new JsonTextWriter(utfWriter) { CloseOutput = false })
-				_serializer.Serialize(jsonWriter, t, typeof(T));
+				_serializer.Serialize(jsonWriter, value, type);
 		}
 
-		public void Serialize<T>(T t, ISerializedContainer container)
+		public void Serialize<T>(ISerializedContainer container, T value)
+		{
+			Serialize(container, value, typeof(T));
+		}
+
+		public void Serialize(ISerializedContainer container, object value, Type type)
 		{
 			var jTokenContainer = container as JArrayContainer;
 			if (jTokenContainer == null)
 				throw new ArgumentException("Invalid container. Use the GenerateContainer method.");
 
 			using (var writer = jTokenContainer.Array.CreateWriter())
-				_serializer.Serialize(writer, t, typeof(T));
+				_serializer.Serialize(writer, value, type);
 		}
 	}
 }

@@ -10,11 +10,16 @@ namespace CommonSerializer
 		bool StreamsUtf8 { get; }
 
 		ISerializedContainer GenerateContainer();
-		void Serialize<T>(T t, ISerializedContainer container);
 
-		void Serialize<T>(T t, Stream stream);
-		void Serialize<T>(T t, TextWriter writer);
-		string Serialize<T>(T t);
+		void Serialize<T>(ISerializedContainer container, T value);
+		void Serialize<T>(Stream stream, T value);
+		void Serialize<T>(TextWriter writer, T value);
+		string Serialize<T>(T value);
+
+		void Serialize(ISerializedContainer container, object value, Type type);
+		void Serialize(Stream stream, object value, Type type);
+		void Serialize(TextWriter writer, object value, Type type);
+		string Serialize(object value, Type type);
 
 		T Deserialize<T>(ISerializedContainer container);
 		T Deserialize<T>(Stream stream);

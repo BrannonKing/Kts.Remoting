@@ -15,8 +15,6 @@ namespace Kts.Remoting.Tests
 {
 	public class OwinClientServerTests
 	{
-
-
 		[Fact]
 		public void ConsecutiveCalls()
 		{
@@ -24,7 +22,7 @@ namespace Kts.Remoting.Tests
 			using (WebApp.Start<Startup>(address))
 			using (var client = new ClientWebSocket())
 			{
-				var generator = new CodeDomProxyClassGenerator();
+				var generator = new DynamicProxyClassGenerator();// new CodeDomProxyClassGenerator();
 				var service = client.RegisterInterface<IMyService>(generator, new JsonCommonSerializer());
 
 				client.ConnectAsync(new Uri("ws://localhost:18081/rt1"), CancellationToken.None).Wait();

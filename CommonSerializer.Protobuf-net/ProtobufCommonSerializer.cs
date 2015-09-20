@@ -113,38 +113,58 @@ namespace CommonSerializer.ProtobufNet
 			_runtime[typeof(TBase)].AddSubType(fieldNumber, typeof(TInheritor));
 		}
 
-		public string Serialize<T>(T t)
+		public string Serialize<T>(T value)
+		{
+			return Serialize(value, typeof(T));
+		}
+
+		public string Serialize(object value, Type type)
 		{
 			var sb = new StringBuilder();
 			using (var stringWriter = new StringWriter(sb))
-				Serialize<T>(t, stringWriter);
+				Serialize(stringWriter, value, type);
 			return sb.ToString();
 		}
 
-		public void Serialize<T>(T t, TextWriter writer)
+		public void Serialize<T>(TextWriter writer, T value)
+		{
+			Serialize(writer, value, typeof(T));
+		}
+
+		public void Serialize(TextWriter writer, object value, Type type)
 		{
 			using (var stream = new MemoryStream())
 			{
-				Serialize<T>(t, stream);
+				Serialize(stream, value, type);
 				stream.Flush();
 				var base64 = Convert.ToBase64String(stream.ToArray());
 				writer.Write(base64);
 			}
 		}
 
-		public void Serialize<T>(T t, Stream stream)
+		public void Serialize<T>(Stream stream, T value)
 		{
-			_runtime.SerializeWithLengthPrefix(stream, t, typeof(T), PrefixStyle.Fixed32, 0);
+			Serialize(stream, value, typeof(T));
 		}
 
-		public void Serialize<T>(T t, ISerializedContainer container)
+		public void Serialize(Stream stream, object value, Type type)
+		{
+			_runtime.SerializeWithLengthPrefix(stream, value, type, PrefixStyle.Fixed32, 0);
+		}
+
+		public void Serialize<T>(ISerializedContainer container, T value)
+		{
+			Serialize(container, value, typeof(T));
+		}
+
+        public void Serialize(ISerializedContainer container, object value, Type type)
 		{
 			var psc = container as ProtobufSerializedContainer;
 			if (psc == null)
 				throw new ArgumentException("Invalid container type. Use the GenerateContainer method.");
 
-			Serialize<T>(t, psc.Stream);
+			Serialize(psc.Stream, value, type);
 			psc.Count++;
 		}
-	}
+    }
 }

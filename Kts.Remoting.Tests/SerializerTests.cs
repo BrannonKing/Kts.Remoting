@@ -47,7 +47,7 @@ namespace Kts.Remoting.Tests
 			{
 				using (var stream = new MemoryStream())
 				{
-					serializer.Serialize(data, stream);
+					serializer.Serialize(stream, data);
 					stream.Position = 0;
 					var result = serializer.Deserialize<TestData>(stream);
 					VerifyEqual(data, result);
@@ -56,7 +56,7 @@ namespace Kts.Remoting.Tests
 				using (var stream = new MemoryStream())
 				using (var writer = new StreamWriter(stream))
 				{
-					serializer.Serialize(data, writer);
+					serializer.Serialize(writer, data);
 					writer.Flush();
 					stream.Position = 0;
 					using (var reader = new StreamReader(stream))
@@ -177,11 +177,11 @@ namespace Kts.Remoting.Tests
 				var container = serializer.GenerateContainer();
 				Assert.True(container.CanWrite);
 
-				serializer.Serialize("howdy", container);
-				serializer.Serialize(42, container);
-				serializer.Serialize(101.7, container);
+				serializer.Serialize(container, "howdy");
+				serializer.Serialize(container, 42);
+				serializer.Serialize(container, 101.7);
 				var st = new SubTestData { Name = "nm1" };
-				serializer.Serialize(st, container);
+				serializer.Serialize(container, st);
 
 				Assert.Equal(4, container.Count);
 				Assert.True(container.CanWrite);
@@ -191,7 +191,7 @@ namespace Kts.Remoting.Tests
 				ContainerWrapper wrapper2;
 				using(var ms = new MemoryStream())
 				{
-					serializer.Serialize(wrapper, ms);
+					serializer.Serialize(ms, wrapper);
 					ms.Position = 0;
 					wrapper2 = serializer.Deserialize<ContainerWrapper>(ms);
 				}

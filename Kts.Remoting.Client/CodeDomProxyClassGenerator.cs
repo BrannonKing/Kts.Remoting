@@ -175,6 +175,7 @@ namespace Kts.Remoting.Client
 		}
 
 		public T Create<T>(ICommonWebSocket socket, ICommonSerializer serializer)
+			where T : class
 		{
 			var className = "ProxyFor" + typeof(T).Name;
 			var def = GenerateClassDefinition<T>(className);

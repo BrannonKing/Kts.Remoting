@@ -19,7 +19,7 @@ namespace Kts.Remoting.Client
 		public T Create<T>(ICommonWebSocket socket, ICommonSerializer serializer) where T : class
 		{
 			ValidateInterface(typeof(T));
-			return _generator.CreateInterfaceProxyWithoutTarget<T>(new InterfaceInterceptor(socket, serializer));
+			return _generator.CreateInterfaceProxyWithoutTarget<T>(new InterfaceInterceptor(socket, serializer, typeof(T).Name));
 		}
 
 		private void ValidateInterface(Type type)
@@ -50,10 +50,11 @@ namespace Kts.Remoting.Client
 			private readonly string _hubName;
 			private static long _counter = DateTime.UtcNow.Ticks;
 
-			public InterfaceInterceptor(ICommonWebSocket socket, ICommonSerializer serializer)
+			public InterfaceInterceptor(ICommonWebSocket socket, ICommonSerializer serializer, string hubName)
 			{
 				_socket = socket;
 				_serializer = serializer;
+				_hubName = hubName;
 
 				_socket.Received += OnReceived;
 			}
@@ -65,7 +66,7 @@ namespace Kts.Remoting.Client
 				message.Arguments = _serializer.GenerateContainer();
 				var parameters = invocation.GetConcreteMethod().GetParameters();
 				for(int i = 0; i < invocation.Arguments.Length; i++)
-					_serializer.Serialize(invocation.Arguments[i], parameters[i].ParameterType, message.Arguments);
+					_serializer.Serialize(message.Arguments, invocation.Arguments[i], parameters[i].ParameterType);
 
 				// left off: need serializer overloads that take type. 
 				// Also, add multiples simultaneously to the container
@@ -75,7 +76,13 @@ namespace Kts.Remoting.Client
 
 			protected async Task<dynamic> Send(Message message, Type returnType)
 			{
-				var sourceType = typeof(TaskCompletionSource<>).MakeGenericType(returnType);
+				var genericReturnTypes = returnType.GetGenericArguments();
+				if (genericReturnTypes.Length > 1)
+					throw new NotSupportedException("Expecting a single generic type on a Task return type.");
+
+				var genericType = genericReturnTypes.Length > 0 ? genericReturnTypes[0] : typeof(bool);
+
+				var sourceType = typeof(TaskCompletionSource<>).MakeGenericType(genericType);
 				dynamic source = Activator.CreateInstance(sourceType);
 				message.Hub = _hubName;
 				do
@@ -85,7 +92,7 @@ namespace Kts.Remoting.Client
 
 				using (var ms = new MemoryStream()) // TODO: make a buffer pool
 				{
-					_serializer.Serialize(message, ms);
+					_serializer.Serialize(ms, message);
 					ms.Position = 0;
 					await _socket.Send(ms, !_serializer.StreamsUtf8);
 				}
