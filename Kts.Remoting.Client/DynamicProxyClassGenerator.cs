@@ -74,7 +74,7 @@ namespace Kts.Remoting.Client
 				invocation.ReturnValue = Send(message, invocation.Method.ReturnType);
 			}
 
-			protected async Task<dynamic> Send(Message message, Type returnType)
+			private object Send(Message message, Type returnType)
 			{
 				var genericReturnTypes = returnType.GetGenericArguments();
 				if (genericReturnTypes.Length > 1)
@@ -90,13 +90,12 @@ namespace Kts.Remoting.Client
 					message.ID = ToBase62(Interlocked.Increment(ref _counter));
 				} while (!_sentMessages.TryAdd(message, source));
 
-				using (var ms = new MemoryStream()) // TODO: make a buffer pool
-				{
-					_serializer.Serialize(ms, message);
-					ms.Position = 0;
-					await _socket.Send(ms, !_serializer.StreamsUtf8);
-				}
-				return await source.Task;
+				var ms = new MemoryStream(); // TODO: make a buffer pool
+				_serializer.Serialize(ms, message);
+				ms.Position = 0;
+				// TODO: do something with errors/faulted state in this ContinueWidth
+				_socket.Send(ms, !_serializer.StreamsUtf8).ContinueWith(prev => ms.Dispose(), TaskContinuationOptions.ExecuteSynchronously);
+				return source.Task;
 			}
 
 			private static readonly char[] Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
