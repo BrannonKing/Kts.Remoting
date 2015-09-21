@@ -82,9 +82,6 @@ namespace Kts.Remoting.Server
 	public class ProxyMiddleware : OwinMiddleware
 	{
 		private readonly OptionsForProxiedServices _options;
-		private WebSocketSendAsync _sendAsync;
-		private WebSocketReceiveAsync _receiveAsync;
-		private WebSocketCloseAsync _closeAsync;
 
 		public ProxyMiddleware(OwinMiddleware next, OptionsForProxiedServices options)
 			: base(next)
@@ -113,16 +110,17 @@ namespace Kts.Remoting.Server
 
 			context.Response.Headers.Set("X-Content-Type-Options", "nosniff");
 
-			_sendAsync = context.Get<WebSocketSendAsync>("websocket.SendAsync");
-			_receiveAsync = context.Get<WebSocketReceiveAsync>("websocket.ReceiveAsync");
-			_closeAsync = context.Get<WebSocketCloseAsync>("websocket.CloseAsync");
-
 			accept.Invoke(null, RunReadLoop);
 		}
 
 		private async Task RunReadLoop(IDictionary<string, object> websocketContext)
 		{
 			_options.FireOnConnected();
+
+			var sendAsync = (WebSocketSendAsync)websocketContext["websocket.SendAsync"];
+			var receiveAsync = (WebSocketReceiveAsync)websocketContext["websocket.ReceiveAsync"];
+			var closeAsync = (WebSocketCloseAsync)websocketContext["websocket.CloseAsync"];
+
 
 			foreach (var kvp in _options.Services)
 			{
@@ -151,7 +149,7 @@ namespace Kts.Remoting.Server
 					do
 					{
 						var segment = new ArraySegment<byte>(buffer, 0, buffer.Length);
-						received = await _receiveAsync.Invoke(segment, _options.CancellationToken);
+						received = await receiveAsync.Invoke(segment, _options.CancellationToken);
 						stream.Write(segment.Array, segment.Offset, received.Item3);
 					} while (!received.Item2 && !_options.CancellationToken.IsCancellationRequested);
 
