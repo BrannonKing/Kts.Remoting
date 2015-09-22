@@ -119,7 +119,7 @@ namespace Kts.Remoting.Client
 
 				dynamic source;
 				if (_sentMessages.TryRemove(message, out source))
-				{
+		   		{
 					if (!string.IsNullOrEmpty(message.Error))
 						source.SetException(new Exception(message.Error) { Data = { { "Far Stack Trace", message.StackTrace } } });
 					else

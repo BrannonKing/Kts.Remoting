@@ -193,9 +193,13 @@ namespace Kts.Remoting.Server
 							var arguments = new object[parameters.Length];
 							for (int i = 0; i < parameters.Length; i++)
 								arguments[i] = serializer.Deserialize(message.Arguments, parameters[i].ParameterType);
-							var ret = method.Invoke(service, arguments);
-							if (ret is Task)
-								await (Task)ret;
+							var returnValue = method.Invoke(service, arguments);
+							if (returnValue is Task)
+								await (Task)returnValue;
+							message.Arguments = null;
+
+							// TODO: certainly any exception in the method handler should go back in the error here; not sure on deserialization error
+							await SendResults(sendAsync, message, serializer, (dynamic)returnValue);
 						}
 					}
 					catch (Exception ex)
@@ -206,6 +210,7 @@ namespace Kts.Remoting.Server
 				}
 				catch (TaskCanceledException)
 				{
+					closeAsync.Invoke(0, "Cancellation Token Triggered", CancellationToken.None);
 					break;
 				}
 				catch (OperationCanceledException)
@@ -228,6 +233,18 @@ namespace Kts.Remoting.Server
 			while (true);
 
 			_options.FireOnDisconnected();
+		}
+
+		private Task SendResults(WebSocketSendAsync sendAsync, Message message, ICommonSerializer serializer, Task returnValue)
+		{
+			return sendAsync.Invoke()
+		}
+		private Task SendResults<T>(WebSocketSendAsync sendAsync, Message message, ICommonSerializer serializer, Task<T> returnValue)
+		{
+			var container = serializer.GenerateContainer();
+			message.Results = container;
+			serializer.Serialize(container, returnValue.Result);
+			return SendResults(sendAsync, message, serializer, (Task)returnValue);
 		}
 
 
