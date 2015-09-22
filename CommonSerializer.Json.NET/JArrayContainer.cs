@@ -43,6 +43,9 @@ namespace CommonSerializer.Json.NET
 
 		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
 		{
+			if (reader.TokenType == JsonToken.Null)
+				return null;
+
 			var array = JArray.Load(reader);
 			return new JArrayContainer(array);
 		}

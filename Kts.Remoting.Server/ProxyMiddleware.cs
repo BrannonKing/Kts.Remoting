@@ -117,10 +117,10 @@ namespace Kts.Remoting.Server
 		{
 			_options.FireOnConnected();
 
+			// can't get these before the accept call, apparently
 			var sendAsync = (WebSocketSendAsync)websocketContext["websocket.SendAsync"];
 			var receiveAsync = (WebSocketReceiveAsync)websocketContext["websocket.ReceiveAsync"];
 			var closeAsync = (WebSocketCloseAsync)websocketContext["websocket.CloseAsync"];
-
 
 			foreach (var kvp in _options.Services)
 			{
@@ -166,20 +166,13 @@ namespace Kts.Remoting.Server
 					// decompress the thing
 					// deserialize the thing
 					var serializer = _options.Serializer;
+					stream.Position = 0;
 
-					Message message;
-					try
-					{
-						if (isCompressed)
-							stream = new DeflateStream(stream, CompressionMode.Decompress, false);
+					if (isCompressed)
+						stream = new DeflateStream(stream, CompressionMode.Decompress, false);
 
-						message = serializer.Deserialize<Message>(stream);
-					}
-					finally
-					{
-						stream.Dispose();
-					}
-
+					var message = serializer.Deserialize<Message>(stream);
+					
 					// options for deserializing the parameters:
 					// 1. find the method based on name and count. Overloads with the same parameter count will be disallowed.
 					// 2. send the parameters in an ordered dictionary by name. Overloads with conflicting names would be disallowed.

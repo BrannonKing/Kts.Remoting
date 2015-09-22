@@ -167,6 +167,9 @@ namespace Kts.Remoting.Tests
 		{
 			[DataMember(Order = 1)]
 			public ISerializedContainer Container { get; set; }
+
+			[DataMember(Order = 2)]
+			public ISerializedContainer AlwaysNull { get; set; }
 		}
 
 		[Fact]
