@@ -8,13 +8,13 @@ using System.Text;
 using System.Threading.Tasks;
 using CommonSerializer;
 using Microsoft.CSharp;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis;
 
 namespace Kts.Remoting.Client
 {
 	public class CodeDomProxyClassGenerator : IProxyClassGenerator
 	{
-		private readonly CSharpCodeProvider _provider = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
-
 		internal string GenerateClassDefinition<T>(string className)
 		{
 			var sb = new StringBuilder();
@@ -101,77 +101,23 @@ namespace Kts.Remoting.Client
 
 		internal void CompileAndLoadClassDefinition<T>(string def)
 		{
-			var cp = new CompilerParameters();
-
-			// Generate an executable instead of  
-			// a class library.
-			cp.GenerateExecutable = false;
-
-			// Set the assembly file name to generate.
-			//cp.OutputAssembly = newExeFilename;
-
-			// Generate debug information.
-			cp.IncludeDebugInformation = false;
-
-			// Add an assembly reference.
-			var references = new HashSet<string>
+			using (var ms = new MemoryStream())
 			{
-				typeof(T).Assembly.Location,
-				typeof(ICommonSerializer).Assembly.Location,
-				typeof(ICommonWebSocket).Assembly.Location,
-				typeof(Stream).Assembly.Location,
-				typeof(Task).Assembly.Location,
-			};
-			foreach (var type in typeof(T).GetInterfaces())
-				references.Add(type.Assembly.GetName().Name);
-			foreach (var method in typeof(T).GetMethods())
-			{
-				foreach (var type in method.GetGenericArguments())
-					references.Add(type.Assembly.Location);
-				foreach (var type in method.GetParameters().Select(p => p.ParameterType))
-					references.Add(type.Assembly.Location);
-				references.Add(method.ReturnType.Assembly.Location);
+				string assemblyFileName = "gen" + Guid.NewGuid().ToString().Replace("-", "") + ".dll";
+
+				CSharpCompilation compilation = CSharpCompilation.Create(assemblyFileName,
+					new[] { CSharpSyntaxTree.ParseText(fooSource) },
+					new[]
+					{
+						new MetadataReference(typeof (object).Assembly.Location)
+					},
+					new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+					);
+
+				compilation.Emit(ms);
+				Assembly assembly = Assembly.Load(ms.GetBuffer());
+				return assembly;
 			}
-
-			foreach (var assembly in references)
-				cp.ReferencedAssemblies.Add(assembly);
-			
-			// Save the assembly as a physical file.
-			cp.GenerateInMemory = true; // even when true it still writes a file; we just hope it removes the file as well
-
-			// Set the level at which the compiler  
-			// should start displaying warnings.
-			cp.WarningLevel = 3;
-
-			// Set whether to treat all warnings as errors.
-			cp.TreatWarningsAsErrors = false;
-
-			// Set compiler argument to optimize output.
-			cp.CompilerOptions = "/optimize";
-
-			// Set a temporary files collection. 
-			// The TempFileCollection stores the temporary files 
-			// generated during a build in the current directory, 
-			// and does not delete them after compilation.
-			cp.TempFiles = new TempFileCollection(Path.GetTempPath(), false);
-
-			// Specify the class that contains  
-			// the main method of the executable.
-			//cp.MainClass = "Generator.Program";
-
-			// Set the embedded resource file of the assembly. 
-			//cp.EmbeddedResources.Add(resourceFilename);
-
-			//var attributes = Assembly.GetExecutingAssembly().CustomAttributes;
-			//var fileVersion = attributes.Single(a => a.AttributeType == typeof(AssemblyFileVersionAttribute));
-			//var prodVersion = attributes.SingleOrDefault(a => a.AttributeType == typeof(AssemblyVersionAttribute)) ?? fileVersion;
-			//var aa = "[assembly: System.Reflection.AssemblyFileVersionAttribute(" + fileVersion.ConstructorArguments[0] + ")]" + Environment.NewLine;
-			//aa += "[assembly: System.Reflection.AssemblyVersionAttribute(" + prodVersion.ConstructorArguments[0] + ")]" + Environment.NewLine;
-			
-				var results = _provider.CompileAssemblyFromSource(cp, def);
-
-			if (results.Errors.HasErrors)
-				throw new Exception("Unable to compile installer package. Message: " + string.Join(". ", results.Errors));
 		}
 
 		public T Create<T>(ICommonWebSocket socket, ICommonSerializer serializer)
