@@ -237,7 +237,8 @@ namespace Kts.Remoting.Server
 
 		private Task SendResults(WebSocketSendAsync sendAsync, Message message, ICommonSerializer serializer, Task returnValue)
 		{
-			return sendAsync.Invoke()
+			throw new NotImplementedException();
+			//return sendAsync.Invoke()
 		}
 		private Task SendResults<T>(WebSocketSendAsync sendAsync, Message message, ICommonSerializer serializer, Task<T> returnValue)
 		{
