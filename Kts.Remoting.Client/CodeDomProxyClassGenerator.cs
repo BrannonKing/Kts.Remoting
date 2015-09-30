@@ -18,7 +18,7 @@ namespace Kts.Remoting.Client
 		internal string GenerateClassDefinition<T>(string className)
 		{
 			var sb = new StringBuilder();
-			sb.AppendLine("[assembly: System.Runtime.Versioning.TargetFramework(\".NETFramework,Version=v4.5.1\")]");
+			sb.AppendLine("[assembly: System.Runtime.Versioning.TargetFramework(\".NETFramework,Version=v4.5\")]");
 			sb.Append("public class ");
 			sb.Append(className);
 			sb.Append(": Kts.Remoting.Client.ProxyBase, ");
@@ -114,27 +114,27 @@ namespace Kts.Remoting.Client
 			cp.IncludeDebugInformation = false;
 
 			// Add an assembly reference.
-			var references = new HashSet<string>
-			{
-				typeof(T).Assembly.Location,
-				typeof(ICommonSerializer).Assembly.Location,
-				typeof(ICommonWebSocket).Assembly.Location,
-				typeof(Stream).Assembly.Location,
-				typeof(Task).Assembly.Location,
-			};
-			foreach (var type in typeof(T).GetInterfaces())
-				references.Add(type.Assembly.GetName().Name);
-			foreach (var method in typeof(T).GetMethods())
-			{
-				foreach (var type in method.GetGenericArguments())
-					references.Add(type.Assembly.Location);
-				foreach (var type in method.GetParameters().Select(p => p.ParameterType))
-					references.Add(type.Assembly.Location);
-				references.Add(method.ReturnType.Assembly.Location);
-			}
+			//var references = new HashSet<string>
+			//{
+			//	typeof(T).Assembly.Location,
+			//	typeof(ICommonSerializer).Assembly.Location,
+			//	typeof(ICommonWebSocket).Assembly.Location,
+			//	typeof(Stream).Assembly.Location,
+			//	typeof(Task).Assembly.Location,
+			//};
+			//foreach (var type in typeof(T).GetInterfaces())
+			//	references.Add(type.Assembly.GetName().Name);
+			//foreach (var method in typeof(T).GetMethods())
+			//{
+			//	foreach (var type in method.GetGenericArguments())
+			//		references.Add(type.Assembly.Location);
+			//	foreach (var type in method.GetParameters().Select(p => p.ParameterType))
+			//		references.Add(type.Assembly.Location);
+			//	references.Add(method.ReturnType.Assembly.Location);
+			//}
 
-			foreach (var assembly in references)
-				cp.ReferencedAssemblies.Add(assembly);
+			//foreach (var assembly in references)
+			//	cp.ReferencedAssemblies.Add(assembly);
 
 			// Save the assembly as a physical file.
 			cp.GenerateInMemory = true; // even when true it still writes a file; we just hope it removes the file as well
