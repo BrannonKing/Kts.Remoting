@@ -9,12 +9,12 @@ namespace Kts.Remoting.Client
 {
 	public abstract class ProxyBase: IDisposable
 	{
-		private readonly ICommonWebSocket _socket;
+		private readonly ICommonTransport _socket;
 		protected readonly ICommonSerializer _serializer;
 		private readonly ConcurrentDictionary<Message, dynamic> _sentMessages = new ConcurrentDictionary<Message, dynamic>();
 		private readonly string _hubName;
 
-		protected ProxyBase(ICommonWebSocket socket, ICommonSerializer serializer, string hubName)
+		protected ProxyBase(ICommonTransport socket, ICommonSerializer serializer, string hubName)
 		{
 			_hubName = hubName;
 			_socket = socket;

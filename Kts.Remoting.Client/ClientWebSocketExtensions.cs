@@ -10,7 +10,7 @@ namespace Kts.Remoting.Client
 {
 	public static class ClientWebSocketExtensions
 	{
-		private class ClientWebSocketCommonizer : ICommonWebSocket
+		private class ClientWebSocketCommonizer : ICommonTransport
 		{
 			private readonly ConcurrentQueue<byte[]> _buffers = new ConcurrentQueue<byte[]>();
 			private readonly int _bufferSize;

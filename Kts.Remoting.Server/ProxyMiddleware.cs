@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -237,8 +238,13 @@ namespace Kts.Remoting.Server
 
 		private Task SendResults(WebSocketSendAsync sendAsync, Message message, ICommonSerializer serializer, Task returnValue)
 		{
-			throw new NotImplementedException();
-			//return sendAsync.Invoke()
+			using (var stream = new MemoryStream())
+			{
+				_options.Serializer.Serialize(stream, message);
+				var bytes = stream.ToArray();
+				var segment = new ArraySegment<byte>(bytes);
+				return sendAsync.Invoke(segment, serializer.StreamsUtf8 ? (int)WebSocketMessageType.Text : (int)WebSocketMessageType.Binary, true, _options.CancellationToken);
+			}
 		}
 		private Task SendResults<T>(WebSocketSendAsync sendAsync, Message message, ICommonSerializer serializer, Task<T> returnValue)
 		{

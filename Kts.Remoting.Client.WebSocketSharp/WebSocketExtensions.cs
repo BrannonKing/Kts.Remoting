@@ -9,7 +9,7 @@ namespace Kts.Remoting.Client.WebSocketSharp
 {
 	public static class WebSocketExtensions
 	{
-		private class WebSocketSharpComonizer : ICommonWebSocket
+		private class WebSocketSharpComonizer : ICommonTransport
 		{
 			private readonly WebSocket _socket;
 
