@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CSharp;
 
-namespace Kts.Remoting.Client
+namespace Kts.Remoting
 {
 	public class RoslynProxyClassGenerator : IProxyClassGenerator
 	{

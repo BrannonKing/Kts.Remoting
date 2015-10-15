@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Kts.Remoting.Client
+namespace Kts.Remoting
 {
 	public interface ICommonTransport: IDisposable
 	{

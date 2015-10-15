@@ -1,6 +1,6 @@
 using CommonSerializer;
 
-namespace Kts.Remoting.Client
+namespace Kts.Remoting
 {
 	public interface IProxyClassGenerator
 	{

@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer;
 
-namespace Kts.Remoting.Client
+namespace Kts.Remoting
 {
 	public abstract class ProxyBase: IDisposable
 	{

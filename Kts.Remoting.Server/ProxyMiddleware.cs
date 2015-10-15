@@ -157,11 +157,11 @@ namespace Kts.Remoting.Server
 					if (_options.CancellationToken.IsCancellationRequested)
 						break;
 
-					var isClosed = (received.Item1 & 0x8) > 0;
+					var isClosed = (received.Item1 & CLOSE_OP) > 0;
 					if (isClosed)
 						break;
 
-					var isUTF8 = (received.Item1 & 0x01) > 0;
+					var isUTF8 = (received.Item1 & TEXT_OP) > 0;
 					var isCompressed = (received.Item1 & 0x40) > 0;
 
 					// decompress the thing
@@ -236,6 +236,11 @@ namespace Kts.Remoting.Server
 			_options.FireOnDisconnected();
 		}
 
+		internal const int TEXT_OP = 0x1;
+		internal const int BINARY_OP = 0x2;
+		internal const int CLOSE_OP = 0x8;
+		internal const int PONG = 0xA;
+
 		private Task SendResults(WebSocketSendAsync sendAsync, Message message, ICommonSerializer serializer, Task returnValue)
 		{
 			using (var stream = new MemoryStream())
@@ -243,7 +248,7 @@ namespace Kts.Remoting.Server
 				_options.Serializer.Serialize(stream, message);
 				var bytes = stream.ToArray();
 				var segment = new ArraySegment<byte>(bytes);
-				return sendAsync.Invoke(segment, serializer.StreamsUtf8 ? (int)WebSocketMessageType.Text : (int)WebSocketMessageType.Binary, true, _options.CancellationToken);
+				return sendAsync.Invoke(segment, serializer.StreamsUtf8 ? TEXT_OP : BINARY_OP, true, _options.CancellationToken);
 			}
 		}
 		private Task SendResults<T>(WebSocketSendAsync sendAsync, Message message, ICommonSerializer serializer, Task<T> returnValue)

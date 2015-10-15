@@ -91,7 +91,6 @@
   <ItemGroup>
     <Compile Include="SerializerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="OwinClientServerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -108,15 +107,6 @@
     <ProjectReference Include="..\CommonSerializer\CommonSerializer.csproj">
       <Project>{6d8f5c82-4826-4008-90c1-0b8c4023c075}</Project>
       <Name>CommonSerializer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Kts.Remoting.Client\Kts.Remoting.Client.csproj">
-      <Project>{57126d8a-adcc-41ea-be7f-32ba0170c68a}</Project>
-      <Name>Kts.Remoting.Client</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Kts.Remoting.Server\Kts.Remoting.Server.csproj">
-      <Project>{8d5eb1d5-d853-4428-9bc0-3d24c72dd49b}</Project>
-      <Name>Kts.Remoting.Server</Name>
-      <Aliases>global</Aliases>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

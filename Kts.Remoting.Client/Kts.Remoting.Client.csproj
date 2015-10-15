@@ -32,15 +32,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\Kts.Remoting.Server\Message.cs">
-      <Link>Message.cs</Link>
-    </Compile>
     <Compile Include="ClientWebSocketExtensions.cs" />
-    <Compile Include="RoslynProxyClassGenerator.cs" />
-    <Compile Include="IProxyClassGenerator.cs" />
-    <Compile Include="ICommonTransport.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ProxyBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommonSerializer\CommonSerializer.csproj">
