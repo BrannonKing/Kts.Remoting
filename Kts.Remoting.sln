@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Shared", "Kts.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.WebSocketSharp", "Kts.Remoting.WebSocketSharp\Kts.Remoting.WebSocketSharp.csproj", "{4B9045CF-837E-4FE8-94A0-44B99FCF67D4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.NetMQ", "Kts.Remoting.NetMQ\Kts.Remoting.NetMQ.csproj", "{930C91FD-B371-4EF6-A314-5CEFE28A155A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{4B9045CF-837E-4FE8-94A0-44B99FCF67D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4B9045CF-837E-4FE8-94A0-44B99FCF67D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4B9045CF-837E-4FE8-94A0-44B99FCF67D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{930C91FD-B371-4EF6-A314-5CEFE28A155A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{930C91FD-B371-4EF6-A314-5CEFE28A155A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{930C91FD-B371-4EF6-A314-5CEFE28A155A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{930C91FD-B371-4EF6-A314-5CEFE28A155A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

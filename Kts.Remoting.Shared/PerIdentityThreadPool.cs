@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Principal;
-using System.Threading.Tasks;
 
-namespace Kts.Remoting.Server
+namespace Kts.Remoting
 {
-    public static class PerIdentityThreadPool
-    {
+	public static class PerIdentityThreadPool
+	{
 		public static void Queue(string id, int maxThreads, IIdentity identity, Action method)
 		{
 			// add our method to a queue along with its task
@@ -21,5 +18,5 @@ namespace Kts.Remoting.Server
 			// stop all the threads
 			// remove the queue for that id
 		}
-    }
+	}
 }

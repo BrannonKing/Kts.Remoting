@@ -13,7 +13,7 @@ using Microsoft.CSharp;
 
 namespace Kts.Remoting
 {
-	public class RoslynProxyClassGenerator : IProxyClassGenerator
+	public class RoslynProxyObjectGenerator : IProxyObjectGenerator
 	{
 		internal string GenerateClassDefinition<T>(string className, HashSet<string> assemblies)
 		{
@@ -100,7 +100,7 @@ namespace Kts.Remoting
 			return _provider.GetTypeOutput(new CodeTypeReference(t));
 		}
 
-		internal Assembly CompileAndLoadClassDefinition<T>(string code, string className, HashSet<string> assemblies)
+		internal Assembly CompileAndLoadClassDefinition(string code, string className, HashSet<string> assemblies)
 		{
 			using (var ms = new MemoryStream())
 			{
@@ -128,7 +128,7 @@ namespace Kts.Remoting
 			}
 		}
 
-		public T Create<T>(ICommonTransport socket, ICommonSerializer serializer, string hubName = null)
+		public T Create<T>(ICommonTransport transport, ICommonSerializer serializer, string serviceName = null)
 			where T : class
 		{
 			if (!typeof(T).IsInterface)
@@ -147,12 +147,12 @@ namespace Kts.Remoting
 					assemblies.Add(loaded.Location);
 
 			var code = GenerateClassDefinition<T>(className, assemblies);
-			var assembly = CompileAndLoadClassDefinition<T>(code, className, assemblies);
+			var assembly = CompileAndLoadClassDefinition(code, className, assemblies);
 
-			if (hubName == null)
-				hubName = typeof(T).Name;
+			if (serviceName == null)
+				serviceName = typeof(T).Name;
 			var type = assembly.GetType(className);
-			return (T)Activator.CreateInstance(type, socket, serializer, hubName);
+			return (T)Activator.CreateInstance(type, transport, serializer, serviceName);
 		}
 	}
 }

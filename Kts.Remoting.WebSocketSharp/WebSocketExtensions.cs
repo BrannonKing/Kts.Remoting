@@ -3,9 +3,10 @@ using System.IO;
 using System.Threading.Tasks;
 using CommonSerializer;
 using WebSocketSharp;
+using Kts.Remoting;
 using WebSocket = WebSocketSharp.WebSocket;
 
-namespace Kts.Remoting.Client.WebSocketSharp
+namespace Kts.Remoting.WebSocketSharp
 {
 	public static class WebSocketExtensions
 	{
@@ -21,6 +22,7 @@ namespace Kts.Remoting.Client.WebSocketSharp
 
 			private void OnMessageReceived(object sender, MessageEventArgs e)
 			{
+				e.
 				using (var ms = new MemoryStream(e.RawData))
 					Received.Invoke(ms);
 			}
@@ -30,7 +32,7 @@ namespace Kts.Remoting.Client.WebSocketSharp
 				_socket.OnMessage -= OnMessageReceived;
 			}
 
-			public Task Send(Stream stream, bool binary)
+			public Task Send(Stream stream)
 			{
 				var source = new TaskCompletionSource<bool>();
 				_socket.SendAsync(stream, (int)stream.Length, success =>
@@ -45,10 +47,19 @@ namespace Kts.Remoting.Client.WebSocketSharp
 
 			public event Action<Stream> Received = delegate { };
 		}
-		public static void RegisterInterface<T>(this WebSocket socket, IProxyClassGenerator generator, ICommonSerializer serializer) where T : class
+
+		public static T RegisterInterfaceAsProxy<T>(this WebSocket socket, ICommonSerializer serializer) where T : class
 		{
-			generator.Create<T>(new WebSocketSharpComonizer(socket),  serializer);
+			return RegisterInterfaceAsProxy<T>(socket, serializer, new RoslynProxyObjectGenerator());
 		}
+
+
+		public static T RegisterInterfaceAsProxy<T>(this WebSocket socket, ICommonSerializer serializer, IProxyObjectGenerator generator) where T : class
+		{
+			return generator.Create<T>(new WebSocketSharpComonizer(socket),  serializer);
+		}
+
+		public static void RegisterService<T>(T service, ICommonSerializer serializer)
 
 	}
 }
