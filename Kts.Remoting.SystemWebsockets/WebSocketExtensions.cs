@@ -68,9 +68,13 @@ namespace Kts.Remoting.SystemWebsockets
 			return options.Generator.Create<T>(new WebSocketTransport(socket, options.Serializer.StreamsUtf8), options.Serializer, options.ServiceName);
 		}
 
-		public static void RegisterServices(this WebSocket socket, ServiceRegistrationOptions options)
+		public static void RegisterServices(this WebSocketContext context, ServiceRegistrationOptions options)
 		{
-			var transport = new WebSocketTransport(socket, options.Serializer.StreamsUtf8);
+			// TODO: use these
+			var isLocal = context.IsLocal;
+			var user = context.User;
+			//var connectionId = context.
+			var transport = new WebSocketTransport(context.WebSocket, options.Serializer.StreamsUtf8);
 			foreach (var service in options.Services)
 				options.Generator.Create(transport, options.Serializer, service.Value, service.Key);
 		}
