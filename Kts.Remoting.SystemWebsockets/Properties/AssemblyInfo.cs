@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Kts.Remoting.Client")]
+[assembly: AssemblyTitle("Kts.Remoting.SystemWebsockets")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Kts.Remoting.Client")]
+[assembly: AssemblyProduct("Kts.Remoting.SystemWebsockets")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("57126d8a-adcc-41ea-be7f-32ba0170c68a")]
+[assembly: Guid("7585b613-5427-4a7d-abcc-9c4793a735d0")]
 
 // Version information for an assembly consists of the following four values:
 //

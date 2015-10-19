@@ -65,7 +65,7 @@ namespace Kts.Remoting
 		private void OnReceived(object sender, DataReceivedArgs e)
 		{
 			Message message;
-			using(var stream = new MemoryStream(e.Data, false))
+			using(var stream = new MemoryStream(e.Data, 0, e.DataCount, false))
 				message = _serializer.Deserialize<Message>(stream);
 
 			dynamic source;

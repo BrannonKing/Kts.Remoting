@@ -101,7 +101,7 @@ namespace Kts.Remoting.NetMQ
 				var message = e.Socket.ReceiveMultipartMessage();
 				var connectionId = _appendConnection ? message.First.ToByteArray() : null;
 				var data = message.Last.ToByteArray();
-				Received.Invoke(this, new DataReceivedArgs { Data = data, ConnectionID = connectionId });
+				Received.Invoke(this, new DataReceivedArgs { Data = data, DataCount = data.Length, ConnectionID = connectionId });
 			}
 
 			public void ProcessMessages()

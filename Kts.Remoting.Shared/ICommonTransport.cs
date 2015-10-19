@@ -8,6 +8,7 @@ namespace Kts.Remoting
 	public sealed class DataReceivedArgs : EventArgs
 	{
 		public byte[] Data { get; set; }
+		public int DataCount { get; set; }
 		public byte[] ConnectionID { get; set; }
 		public IIdentity Identity { get; set; }
 	}
