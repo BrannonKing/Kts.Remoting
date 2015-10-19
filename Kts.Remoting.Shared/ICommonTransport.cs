@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Principal;
 using System.Threading.Tasks;
 
 namespace Kts.Remoting
@@ -8,6 +9,7 @@ namespace Kts.Remoting
 	{
 		public byte[] Data { get; set; }
 		public byte[] ConnectionID { get; set; }
+		public IIdentity Identity { get; set; }
 	}
 
 	public sealed class DataToSendArgs : EventArgs
