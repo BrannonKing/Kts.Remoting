@@ -36,8 +36,8 @@ namespace Kts.Remoting
 			using (var ms = new MemoryStream()) // TODO: make a buffer pool
 			{
 				_serializer.Serialize(ms, message);
-				ms.Position = 0;
-				await _socket.Send(ms, !_serializer.StreamsUtf8);
+				var args = new DataToSendArgs { Data = ms.GetBuffer() };
+				await _socket.Send(args);
 			}
 			return await source.Task;
 		}
@@ -62,9 +62,11 @@ namespace Kts.Remoting
 			_socket.Received -= OnReceived;
 		}
 
-		private void OnReceived(Stream stream)
+		private void OnReceived(object sender, DataReceivedArgs e)
 		{
-			var message = _serializer.Deserialize<Message>(stream);
+			Message message;
+			using(var stream = new MemoryStream(e.Data, false))
+				message = _serializer.Deserialize<Message>(stream);
 
 			dynamic source;
 			if (_sentMessages.TryRemove(message, out source))

@@ -56,7 +56,7 @@
       <HintPath>..\packages\System.Reflection.Metadata.1.0.21\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -67,8 +67,14 @@
     <Compile Include="..\Kts.Remoting.Shared\ICommonTransport.cs">
       <Link>ICommonTransport.cs</Link>
     </Compile>
+    <Compile Include="..\Kts.Remoting.Shared\InterfaceRegistrationOptions.cs">
+      <Link>InterfaceRegistrationOptions.cs</Link>
+    </Compile>
     <Compile Include="..\Kts.Remoting.Shared\IProxyObjectGenerator.cs">
       <Link>IProxyObjectGenerator.cs</Link>
+    </Compile>
+    <Compile Include="..\Kts.Remoting.Shared\IServiceWrapperGenerator.cs">
+      <Link>IServiceWrapperGenerator.cs</Link>
     </Compile>
     <Compile Include="..\Kts.Remoting.Shared\Message.cs">
       <Link>Message.cs</Link>
@@ -78,6 +84,12 @@
     </Compile>
     <Compile Include="..\Kts.Remoting.Shared\RoslynProxyObjectGenerator.cs">
       <Link>RoslynProxyObjectGenerator.cs</Link>
+    </Compile>
+    <Compile Include="..\Kts.Remoting.Shared\RoslynServiceWrapperGenerator.cs">
+      <Link>RoslynServiceWrapperGenerator.cs</Link>
+    </Compile>
+    <Compile Include="..\Kts.Remoting.Shared\ServiceRegistrationOptions.cs">
+      <Link>ServiceRegistrationOptions.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="NetMQExtensions.cs" />

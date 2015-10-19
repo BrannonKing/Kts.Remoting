@@ -1,30 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using CommonSerializer;
-using NetMQ.Sockets;
-using Kts.Remoting;
 using NetMQ;
 
 namespace Kts.Remoting.NetMQ
 {
 	public static class WebSocketExtensions
 	{
-
-		public static T RegisterInterfaceAsProxy<T>(this DealerSocket socket, ICommonSerializer serializer) where T : class
+		public static T RegisterInterfaceAsProxy<T>(this NetMQContext context, InterfaceRegistrationOptions options) where T : class
 		{
-			return RegisterInterfaceAsProxy<T>(socket, serializer, new RoslynProxyObjectGenerator());
+			var mes = new ManualResetEventSlim();
+			T proxy = null;
+			var task = new Task(() =>
+			{
+				// it's tempting to let this instantiate the transport on the caller's thread
+				// but all our message processing will harken back to that thread
+				// which is typically the UI thread in most apps
+				using (var transport = new NetMQSocketTransport(context, null, false))
+				{
+					proxy = options.Generator.Create<T>(transport, options.Serializer, options.ServiceName);
+					mes.Set();
+					transport.ProcessMessages();
+				}
+			}, TaskCreationOptions.LongRunning);
+			task.Start();
+			mes.Wait();
+			mes.Dispose();
+			return proxy;
 		}
 
-
-		public static T RegisterInterfaceAsProxy<T>(this DealerSocket socket, ICommonSerializer serializer, IProxyObjectGenerator generator) where T : class
-		{
-			return generator.Create<T>(new DealerSocketTransport(socket),  serializer);
-		}
-
-		public static void RegisterService<T>(this NetMQContext context, T service, ICommonSerializer serializer, string nicAddress = "tcp://*:18011")
+		public static async Task RegisterServices(this NetMQContext context, ServiceRegistrationOptions options, string nicAddress = "tcp://*:18011")
 		{
 			// we need router because we have to be able to send to back to specific clients
 			// when the router receives a message, it needs to pull off the client ID
@@ -41,52 +47,59 @@ namespace Kts.Remoting.NetMQ
 			// because we want them to have the right identity and not block our messages
 			// and we can't block waiting to get into that threadpool
 
-			var thread = new Thread(() =>
+			var task = new Task(() =>
 			{
-				using (var transport = new NetMQRouterTransport(context, nicAddress))
+				using (var transport = new NetMQSocketTransport(context, nicAddress, true))
 				{
+					var wrappers = new List<IDisposable>();
+					foreach (var service in options.Services)
+					{
+						var wrapper = options.Generator.Create(transport, options.Serializer, service.Value, service.Key);
+						wrappers.Add(wrapper);
+					}
 					// set the transport on our handler
 					transport.ProcessMessages();
+					wrappers.ForEach(w => w.Dispose());
 				}
-			})
-			{
-				IsBackground = true, 
-				Name = "NetMQ Listener for " + service
-			};
-			thread.Start();
+			}, TaskCreationOptions.LongRunning);
+			task.Start();
+			await task; // make sure exceptions get propagated out
 		}
 
-		private class NetMQRouterTransport : ICommonTransport
+		private class NetMQSocketTransport : ICommonTransport
 		{
+			private readonly bool _appendConnection;
 			private readonly NetMQScheduler _scheduler;
 			private readonly Poller _poller;
-			private readonly RouterSocket _router;
+			private readonly NetMQSocket _socket;
 
-			public NetMQRouterTransport(NetMQContext context, string nicAddress)
+			public NetMQSocketTransport(NetMQContext context, string nicAddress, bool appendConnection)
 			{
 				// this class needs to not do anything with threads. Move that up the call stack.
 				// it does need to make the transport, poller, and scheduler and dispose of them all in order
 				// we need some method here for processing messages that blocks indefinitely
-				_router = context.CreateRouterSocket();
-				_router.ReceiveReady += OnReceiveMessage;
-				_router.Bind(nicAddress);
-				_poller = new Poller(_router);
+				_appendConnection = appendConnection;
+				_socket = appendConnection ? (NetMQSocket)context.CreateRouterSocket() : context.CreateDealerSocket();
+				_socket.ReceiveReady += OnReceiveMessage;
+				if (!string.IsNullOrEmpty(nicAddress))
+					_socket.Bind(nicAddress);
+				_poller = new Poller(_socket);
 				_scheduler = new NetMQScheduler(context, _poller);
 			}
 
 			public void Dispose()
 			{
-				_router.ReceiveReady -= OnReceiveMessage;
+				_socket.ReceiveReady -= OnReceiveMessage;
 				_scheduler.Dispose();
 				_poller.Dispose();
-				_router.Dispose();
+				_socket.Dispose();
 			}
 
 			public event EventHandler<DataReceivedArgs> Received = delegate { };
 			private void OnReceiveMessage(object sender, NetMQSocketEventArgs e)
 			{
 				var message = e.Socket.ReceiveMultipartMessage();
-				var connectionId = message.First.ToByteArray();
+				var connectionId = _appendConnection ? message.First.ToByteArray() : null;
 				var data = message.Last.ToByteArray();
 				Received.Invoke(this, new DataReceivedArgs { Data = data, ConnectionID = connectionId });
 			}
@@ -104,10 +117,13 @@ namespace Kts.Remoting.NetMQ
 					foreach (var connection in args.ConnectionIDs)
 					{
 						msg.Clear();
-						msg.Append(connection);
-						msg.AppendEmptyFrame();
+						if (_appendConnection)
+						{
+							msg.Append(connection);
+							msg.AppendEmptyFrame();
+						}
 						msg.Append(args.Data);
-						_router.SendMultipartMessage(msg);
+						_socket.SendMultipartMessage(msg);
 					}
 				});
 				task.Start(_scheduler);
