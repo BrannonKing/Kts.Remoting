@@ -7,19 +7,22 @@ using CommonSerializer;
 using NetMQ.Sockets;
 using Kts.Remoting;
 using NetMQ;
+using System.Net;
 
 namespace Kts.Remoting.NetMQ
 {
-	public static class WebSocketExtensions
+	public static class NetMQExtensions
 	{
 
-		public static T RegisterInterfaceAsProxy<T>(this DealerSocket socket, ICommonSerializer serializer) where T : class
+		public static T RegisterInterfaceAsProxy<T>(this DealerSocket socket, ICommonSerializer serializer, string serverAddress, NetworkCredential credentials) where T : class
 		{
-			return RegisterInterfaceAsProxy<T>(socket, serializer, new RoslynProxyObjectGenerator());
+			// change these parameters to use an options class; it can be shared. The service options are different and include something to validate authentication?
+
+			return RegisterInterfaceAsProxy<T>(socket, serializer, serverAddress, credentials, new RoslynProxyObjectGenerator());
 		}
 
 
-		public static T RegisterInterfaceAsProxy<T>(this DealerSocket socket, ICommonSerializer serializer, IProxyObjectGenerator generator) where T : class
+		public static T RegisterInterfaceAsProxy<T>(this DealerSocket socket, ICommonSerializer serializer, string serverAddress, NetworkCredential credentials, IProxyObjectGenerator generator) where T : class
 		{
 			return generator.Create<T>(new DealerSocketTransport(socket),  serializer);
 		}
