@@ -67,13 +67,7 @@ namespace Kts.Remoting
 		/// <summary>
 		/// Triggers after each client successfully conencts.
 		/// </summary>
-		public event Action OnConnected = delegate { };
-		internal void FireOnConnected() { OnConnected.Invoke(); }
-
-		/// <summary>
-		/// Triggers after a client disconnect, be it requested or due to an exception.
-		/// </summary>
-		public event Action OnDisconnected = delegate { };
-		internal void FireOnDisconnected() { OnDisconnected.Invoke(); }
+		public event Action OnConnectionReceived = delegate { };
+		internal void FireOnConnectionReceived() { OnConnectionReceived.Invoke(); }
 	}
 }

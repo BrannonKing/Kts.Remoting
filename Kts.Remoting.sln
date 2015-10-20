@@ -11,8 +11,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonSerializer.Protobuf-n
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Tests", "Kts.Remoting.Tests\Kts.Remoting.Tests.csproj", "{402094FE-5A7F-4106-8E77-87F2F3E18FD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Server", "Kts.Remoting.Server\Kts.Remoting.Server.csproj", "{8D5EB1D5-D853-4428-9BC0-3D24C72DD49B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Shared", "Kts.Remoting.Shared\Kts.Remoting.Shared.csproj", "{ED7A2881-CC9E-45EA-964E-8B5BDD70CB21}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.WebSocketSharp", "Kts.Remoting.WebSocketSharp\Kts.Remoting.WebSocketSharp.csproj", "{4B9045CF-837E-4FE8-94A0-44B99FCF67D4}"
@@ -20,6 +18,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.NetMQ", "Kts.Remoting.NetMQ\Kts.Remoting.NetMQ.csproj", "{930C91FD-B371-4EF6-A314-5CEFE28A155A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.SystemWebsockets", "Kts.Remoting.SystemWebsockets\Kts.Remoting.SystemWebsockets.csproj", "{9BEAD492-469F-43A8-915F-E56DE522D959}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Owin", "Kts.Remoting.Owin\Kts.Remoting.Owin.csproj", "{C58D1FC3-F22F-4D24-9748-32E03B4B47A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,10 +43,6 @@ Global
 		{402094FE-5A7F-4106-8E77-87F2F3E18FD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{402094FE-5A7F-4106-8E77-87F2F3E18FD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{402094FE-5A7F-4106-8E77-87F2F3E18FD2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8D5EB1D5-D853-4428-9BC0-3D24C72DD49B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8D5EB1D5-D853-4428-9BC0-3D24C72DD49B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8D5EB1D5-D853-4428-9BC0-3D24C72DD49B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8D5EB1D5-D853-4428-9BC0-3D24C72DD49B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{ED7A2881-CC9E-45EA-964E-8B5BDD70CB21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{ED7A2881-CC9E-45EA-964E-8B5BDD70CB21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED7A2881-CC9E-45EA-964E-8B5BDD70CB21}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -63,6 +59,10 @@ Global
 		{9BEAD492-469F-43A8-915F-E56DE522D959}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9BEAD492-469F-43A8-915F-E56DE522D959}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9BEAD492-469F-43A8-915F-E56DE522D959}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C58D1FC3-F22F-4D24-9748-32E03B4B47A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C58D1FC3-F22F-4D24-9748-32E03B4B47A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C58D1FC3-F22F-4D24-9748-32E03B4B47A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C58D1FC3-F22F-4D24-9748-32E03B4B47A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -42,8 +42,8 @@ namespace Kts.Remoting.SystemWebsockets
 						if (result.EndOfMessage)
 						{
 							var args = new DataReceivedArgs { DataCount = (int)ms.Position, Data = ms.GetBuffer() };
-							ms.Position = 0;
 							Received.Invoke(this, args); // assuming synchronous usage of the data: that may not be correct
+							ms.SetLength(0);
 						}
 					} while (true);
 				}
@@ -51,7 +51,6 @@ namespace Kts.Remoting.SystemWebsockets
 
 			public void Dispose()
 			{
-				_socket.Dispose();
 			}
 
 			public async Task Send(DataToSendArgs args)

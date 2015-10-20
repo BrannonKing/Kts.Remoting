@@ -1,20 +1,62 @@
 ﻿using System;
-using System.IO;
 using System.Threading.Tasks;
-using CommonSerializer;
 using WebSocketSharp;
-using Kts.Remoting;
 using WebSocket = WebSocketSharp.WebSocket;
 
 namespace Kts.Remoting.WebSocketSharp
 {
 	public static class WebSocketExtensions
 	{
-		private class WebSocketSharpComonizer : ICommonTransport
+		private class ServerWebSocketSharpTransport : WebSocketSharpTransport
 		{
-			private readonly WebSocket _socket;
+			private readonly ServiceRegistrationOptions _options;
 
-			public WebSocketSharpComonizer(WebSocket socket)
+			public ServerWebSocketSharpTransport(WebSocket socket, ServiceRegistrationOptions options)
+				: base(socket)
+			{
+				_options = options;
+			}
+		}
+
+		private class ClientWebSocketSharpTransport : WebSocketSharpTransport
+		{
+			private readonly InterfaceRegistrationOptions _options;
+
+			public ClientWebSocketSharpTransport(WebSocket socket, InterfaceRegistrationOptions options)
+				: base(socket)
+			{
+				_options = options;
+				if (options.CompressSentMessages)
+					socket.Compression = CompressionMethod.Deflate;
+
+				socket.OnOpen += SocketOnOnOpen;
+				socket.OnClose += SocketOnOnClose;
+			}
+
+			public override void Dispose()
+			{
+				_socket.OnOpen -= SocketOnOnOpen;
+				_socket.OnClose -= SocketOnOnClose;
+
+				base.Dispose();
+			}
+
+			private void SocketOnOnClose(object sender, CloseEventArgs closeEventArgs)
+			{
+				_options.FireOnDisconnected();
+			}
+
+			private void SocketOnOnOpen(object sender, EventArgs eventArgs)
+			{
+				_options.FireOnConnected();
+			}
+		}
+
+		private class WebSocketSharpTransport : ICommonTransport
+		{
+			protected readonly WebSocket _socket;
+
+			public WebSocketSharpTransport(WebSocket socket)
 			{
 				_socket = socket;
 				_socket.OnMessage += OnMessageReceived;
@@ -22,20 +64,19 @@ namespace Kts.Remoting.WebSocketSharp
 
 			private void OnMessageReceived(object sender, MessageEventArgs e)
 			{
-				e.
-				using (var ms = new MemoryStream(e.RawData))
-					Received.Invoke(ms);
+				var args = new DataReceivedArgs { Data = e.RawData, DataCount = e.RawData.Length };
+				Received.Invoke(this, args);
 			}
 
-			public void Dispose()
+			public virtual void Dispose()
 			{
 				_socket.OnMessage -= OnMessageReceived;
 			}
 
-			public Task Send(Stream stream)
+			public Task Send(DataToSendArgs args)
 			{
 				var source = new TaskCompletionSource<bool>();
-				_socket.SendAsync(stream, (int)stream.Length, success =>
+				_socket.SendAsync(args.Data, success =>
 				{
 					if (success)
 						source.SetResult(true);
@@ -45,21 +86,20 @@ namespace Kts.Remoting.WebSocketSharp
 				return source.Task;
 			}
 
-			public event Action<Stream> Received = delegate { };
+			public event EventHandler<DataReceivedArgs> Received = delegate { };
 		}
 
-		public static T RegisterInterfaceAsProxy<T>(this WebSocket socket, ICommonSerializer serializer) where T : class
+		public static T RegisterInterface<T>(this WebSocket socket, InterfaceRegistrationOptions options) where T : class
 		{
-			return RegisterInterfaceAsProxy<T>(socket, serializer, new RoslynProxyObjectGenerator());
+			return options.Generator.Create<T>(new ClientWebSocketSharpTransport(socket, options), options.Serializer, options.ServiceName);
 		}
 
-
-		public static T RegisterInterfaceAsProxy<T>(this WebSocket socket, ICommonSerializer serializer, IProxyObjectGenerator generator) where T : class
+		public static void RegisterServices(this WebSocket socket, ServiceRegistrationOptions options)
 		{
-			return generator.Create<T>(new WebSocketSharpComonizer(socket),  serializer);
+			var transport = new ServerWebSocketSharpTransport(socket, options);
+			foreach (var service in options.Services)
+				options.Generator.Create(transport, options.Serializer, service.Value, service.Key);
 		}
-
-		public static void RegisterService<T>(T service, ICommonSerializer serializer)
 
 	}
 }

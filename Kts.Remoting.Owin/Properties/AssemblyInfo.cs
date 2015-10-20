@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Kts.Remoting.Server")]
+[assembly: AssemblyTitle("Kts.Remoting.Owin")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Kts.Remoting.Server")]
+[assembly: AssemblyProduct("Kts.Remoting.Owin")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("8d5eb1d5-d853-4428-9bc0-3d24c72dd49b")]
+[assembly: Guid("c0b0cbf3-9c9d-42f8-881f-c0878c022b5f")]
 
 // Version information for an assembly consists of the following four values:
 //

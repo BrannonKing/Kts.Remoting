@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NetMQ;
+using NetMQ.Monitoring;
 
 namespace Kts.Remoting.NetMQ
 {
 	public static class WebSocketExtensions
 	{
-		public static T RegisterInterfaceAsProxy<T>(this NetMQContext context, InterfaceRegistrationOptions options) where T : class
+		public static T RegisterInterface<T>(this NetMQContext context, InterfaceRegistrationOptions options, string serverAddress = "tcp://*:18011") where T : class
 		{
 			var mes = new ManualResetEventSlim();
 			T proxy = null;
@@ -17,7 +18,7 @@ namespace Kts.Remoting.NetMQ
 				// it's tempting to let this instantiate the transport on the caller's thread
 				// but all our message processing will harken back to that thread
 				// which is typically the UI thread in most apps
-				using (var transport = new NetMQSocketTransport(context, null, false))
+				using (var transport = new DealerSocketTransport(context, serverAddress, options))
 				{
 					proxy = options.Generator.Create<T>(transport, options.Serializer, options.ServiceName);
 					mes.Set();
@@ -49,7 +50,7 @@ namespace Kts.Remoting.NetMQ
 
 			var task = new Task(() =>
 			{
-				using (var transport = new NetMQSocketTransport(context, nicAddress, true))
+				using (var transport = new RouterSocketTransport(context, nicAddress, options))
 				{
 					var wrappers = new List<IDisposable>();
 					foreach (var service in options.Services)
@@ -66,14 +67,77 @@ namespace Kts.Remoting.NetMQ
 			await task; // make sure exceptions get propagated out
 		}
 
-		private class NetMQSocketTransport : ICommonTransport
+		private class DealerSocketTransport : NetMQSocketTransport
+		{
+			private readonly InterfaceRegistrationOptions _options;
+
+			public DealerSocketTransport(NetMQContext context, string address, InterfaceRegistrationOptions options)
+				: base(context, address, true)
+			{
+				_options = options;
+				_monitor.Connected += OnConnected;
+				_monitor.Disconnected += OnDisconnected;
+				_monitor.ConnectRetried += OnConnectionRetried;
+				_socket.Bind(address);
+			}
+
+			public override void Dispose()
+			{
+				_monitor.Connected -= OnConnected;
+				_monitor.Disconnected -= OnDisconnected;
+				_monitor.ConnectRetried -= OnConnectionRetried;
+				base.Dispose();
+			}
+
+			private void OnConnectionRetried(object sender, NetMQMonitorIntervalEventArgs e)
+			{
+				_options.FireOnConnecting();
+			}
+
+			private void OnDisconnected(object sender, NetMQMonitorSocketEventArgs e)
+			{
+				_options.FireOnDisconnected();
+			}
+
+			private void OnConnected(object sender, NetMQMonitorSocketEventArgs e)
+			{
+				_options.FireOnConnected();
+			}
+		}
+
+		private class RouterSocketTransport : NetMQSocketTransport
+		{
+			private readonly ServiceRegistrationOptions _options;
+
+			public RouterSocketTransport(NetMQContext context, string address, ServiceRegistrationOptions options)
+				:base(context, address, true)
+			{
+				_options = options;
+				_monitor.Accepted += OnConnectionAccepted;
+				_socket.Bind(address);
+			}
+
+			public override void Dispose()
+			{
+				_monitor.Accepted -= OnConnectionAccepted;
+				base.Dispose();
+			}
+
+			private void OnConnectionAccepted(object sender, NetMQMonitorSocketEventArgs e)
+			{
+				_options.FireOnConnectionReceived();
+			}
+		}
+
+		private abstract class NetMQSocketTransport : ICommonTransport
 		{
 			private readonly bool _appendConnection;
 			private readonly NetMQScheduler _scheduler;
 			private readonly Poller _poller;
-			private readonly NetMQSocket _socket;
+			protected readonly NetMQSocket _socket;
+			protected readonly NetMQMonitor _monitor;
 
-			public NetMQSocketTransport(NetMQContext context, string nicAddress, bool appendConnection)
+			protected NetMQSocketTransport(NetMQContext context, string address, bool appendConnection)
 			{
 				// this class needs to not do anything with threads. Move that up the call stack.
 				// it does need to make the transport, poller, and scheduler and dispose of them all in order
@@ -81,14 +145,16 @@ namespace Kts.Remoting.NetMQ
 				_appendConnection = appendConnection;
 				_socket = appendConnection ? (NetMQSocket)context.CreateRouterSocket() : context.CreateDealerSocket();
 				_socket.ReceiveReady += OnReceiveMessage;
-				if (!string.IsNullOrEmpty(nicAddress))
-					_socket.Bind(nicAddress);
+
 				_poller = new Poller(_socket);
 				_scheduler = new NetMQScheduler(context, _poller);
+				_monitor = new NetMQMonitor(context, _socket, address, SocketEvents.All);
+				_monitor.AttachToPoller(_poller);
 			}
 
-			public void Dispose()
+			public virtual void Dispose()
 			{
+				_monitor.Dispose();
 				_socket.ReceiveReady -= OnReceiveMessage;
 				_scheduler.Dispose();
 				_poller.Dispose();
@@ -96,6 +162,7 @@ namespace Kts.Remoting.NetMQ
 			}
 
 			public event EventHandler<DataReceivedArgs> Received = delegate { };
+
 			private void OnReceiveMessage(object sender, NetMQSocketEventArgs e)
 			{
 				var message = e.Socket.ReceiveMultipartMessage();

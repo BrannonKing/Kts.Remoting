@@ -15,12 +15,44 @@ namespace Kts.Remoting
 {
 	public class RoslynProxyObjectGenerator : IProxyObjectGenerator
 	{
+		public T Create<T>(ICommonTransport transport, ICommonSerializer serializer, string serviceName = null)
+			where T : class
+		{
+			if (!typeof(T).IsInterface)
+				throw new ArgumentException("Datatype should be interface: " + typeof(T));
+
+			var className = "ProxyFor" + typeof(T).Name;
+
+			var assemblies = new HashSet<string>();
+
+			foreach (var loaded in AppDomain.CurrentDomain.GetAssemblies())
+				if (!loaded.IsDynamic && loaded.FullName.StartsWith("System"))
+					assemblies.Add(loaded.Location);
+
+			var code = GenerateClassDefinition<T>(className, assemblies);
+			var assembly = CompileAndLoadClassDefinition(code, className, assemblies);
+
+			if (serviceName == null)
+				serviceName = typeof(T).Name;
+			var type = assembly.GetType(className);
+			return (T)Activator.CreateInstance(type, transport, serializer, serviceName);
+		}
+
+		private readonly CSharpCodeProvider _provider = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
+		private string FormatType(Type t, HashSet<string> assemblies)
+		{
+			assemblies.Add(t.Assembly.Location);
+			return _provider.GetTypeOutput(new CodeTypeReference(t));
+		}
+
 		internal string GenerateClassDefinition<T>(string className, HashSet<string> assemblies)
 		{
 			var sb = new StringBuilder();
 			sb.Append("public class ");
 			sb.Append(className);
-			sb.Append(": Kts.Remoting.Client.ProxyBase, ");
+			sb.Append(": ");
+			sb.Append(FormatType(typeof(ProxyBase), assemblies));
+			sb.Append(", ");
 			sb.AppendLine(FormatType(typeof(T), assemblies));
 			sb.AppendLine("{");
 
@@ -93,13 +125,6 @@ namespace Kts.Remoting
 			return sb.ToString();
 		}
 
-		private readonly CSharpCodeProvider _provider = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
-		private string FormatType(Type t, HashSet<string> assemblies)
-		{
-			assemblies.Add(t.Assembly.Location);
-			return _provider.GetTypeOutput(new CodeTypeReference(t));
-		}
-
 		internal Assembly CompileAndLoadClassDefinition(string code, string className, HashSet<string> assemblies)
 		{
 			using (var ms = new MemoryStream())
@@ -126,33 +151,6 @@ namespace Kts.Remoting
 				var assembly = Assembly.Load(ms.GetBuffer());
 				return assembly;
 			}
-		}
-
-		public T Create<T>(ICommonTransport transport, ICommonSerializer serializer, string serviceName = null)
-			where T : class
-		{
-			if (!typeof(T).IsInterface)
-				throw new ArgumentException("Datatype should be interface: " + typeof(T));
-
-			var className = "ProxyFor" + typeof(T).Name;
-
-			var assemblies = new HashSet<string>
-			{
-				typeof(ProxyBase).Assembly.Location,
-				typeof(T).Assembly.Location,
-			};
-
-			foreach (var loaded in AppDomain.CurrentDomain.GetAssemblies())
-				if (!loaded.IsDynamic && loaded.FullName.StartsWith("System"))
-					assemblies.Add(loaded.Location);
-
-			var code = GenerateClassDefinition<T>(className, assemblies);
-			var assembly = CompileAndLoadClassDefinition(code, className, assemblies);
-
-			if (serviceName == null)
-				serviceName = typeof(T).Name;
-			var type = assembly.GetType(className);
-			return (T)Activator.CreateInstance(type, transport, serializer, serviceName);
 		}
 	}
 }

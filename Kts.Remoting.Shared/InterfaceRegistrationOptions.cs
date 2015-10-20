@@ -59,22 +59,21 @@ namespace Kts.Remoting
 		}
 
 		/// <summary>
-		/// By default, all communication exceptions are eaten. Subscribe here to see or do something with them.
-		/// </summary>
-		public event Action<Exception> OnError = delegate { };
-		internal void FireOnError(Exception ex) { OnError.Invoke(ex); }
-
-		/// <summary>
-		/// Triggers after each client successfully conencts.
+		/// Triggers after the client successfully connects.
 		/// </summary>
 		public event Action OnConnected = delegate { };
 		internal void FireOnConnected() { OnConnected.Invoke(); }
 
 		/// <summary>
 		/// Triggers after a client disconnect, be it requested or due to an exception.
-		/// Clients automatically attempt to reconnct. This is 
 		/// </summary>
 		public event Action OnDisconnected = delegate { };
 		internal void FireOnDisconnected() { OnDisconnected.Invoke(); }
+
+		/// <summary>
+		/// Triggers when a client makes a connection attempt.
+		/// </summary>
+		public event Action OnConnecting = delegate { };
+		internal void FireOnConnecting() { OnConnecting.Invoke(); }
 	}
 }
