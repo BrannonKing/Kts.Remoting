@@ -13,9 +13,12 @@ using Microsoft.CSharp;
 
 namespace Kts.Remoting
 {
-	public class RoslynProxyObjectGenerator : IProxyObjectGenerator
+	/// <summary>
+	/// Uses Roslyn to compile a proxy object implementing the specified interface.
+	/// </summary>
+	public class DefaultProxyObjectGenerator : IProxyObjectGenerator
 	{
-		public T Create<T>(ICommonTransport transport, ICommonSerializer serializer, string serviceName = null)
+		public T Create<T>(IMessageHandler handler, ICommonSerializer serializer, string serviceName)
 			where T : class
 		{
 			if (!typeof(T).IsInterface)
@@ -32,10 +35,8 @@ namespace Kts.Remoting
 			var code = GenerateClassDefinition<T>(className, assemblies);
 			var assembly = CompileAndLoadClassDefinition(code, className, assemblies);
 
-			if (serviceName == null)
-				serviceName = typeof(T).Name;
 			var type = assembly.GetType(className);
-			return (T)Activator.CreateInstance(type, transport, serializer, serviceName);
+			return (T)Activator.CreateInstance(type, handler, serializer, serviceName);
 		}
 
 		private readonly CSharpCodeProvider _provider = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
@@ -59,10 +60,10 @@ namespace Kts.Remoting
 			sb.Append("\tpublic ");
 			sb.Append(className);
 			sb.Append("(");
-			sb.Append(FormatType(typeof(ICommonTransport), assemblies));
-			sb.Append(" socket, ");
+			sb.Append(FormatType(typeof(IMessageHandler), assemblies));
+			sb.Append(" handler, ");
 			sb.Append(FormatType(typeof(ICommonSerializer), assemblies));
-			sb.AppendLine(" serializer, string hubName) : base(socket, serializer, hubName) {}");
+			sb.AppendLine(" serializer, string hubName) : base(handler, serializer, hubName) {}");
 
 			var methods = typeof(T).GetMethods();
 			foreach (var method in methods)

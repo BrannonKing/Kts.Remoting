@@ -53,6 +53,9 @@ namespace Kts.Remoting
 		{
 			return ID.GetHashCode();
 		}
+
+		[IgnoreDataMember]
+		public object SessionID { get; set; }
 	}
 
 	// from SignalR:

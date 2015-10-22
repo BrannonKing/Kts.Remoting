@@ -4,6 +4,6 @@ namespace Kts.Remoting
 {
 	public interface IProxyObjectGenerator
 	{
-		T Create<T>(ICommonTransport transport, ICommonSerializer serializer, string serviceName = null) where T : class;
+		T Create<T>(IMessageHandler messageHandler, ICommonSerializer serializer, string serviceName) where T : class;
 	}
 }

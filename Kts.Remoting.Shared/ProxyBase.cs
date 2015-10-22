@@ -1,25 +1,23 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer;
 
 namespace Kts.Remoting
 {
-	public abstract class ProxyBase: IDisposable
+	public abstract class ProxyBase: IMessageHandler
 	{
-		private readonly ICommonTransport _socket;
 		protected readonly ICommonSerializer _serializer;
 		private readonly ConcurrentDictionary<Message, dynamic> _sentMessages = new ConcurrentDictionary<Message, dynamic>();
+		private readonly IMessageHandler _handler;
 		private readonly string _hubName;
 
-		protected ProxyBase(ICommonTransport socket, ICommonSerializer serializer, string hubName)
+		protected ProxyBase(IMessageHandler handler, ICommonSerializer serializer, string hubName)
 		{
+			_handler = handler;
 			_hubName = hubName;
-			_socket = socket;
 			_serializer = serializer;
-			_socket.Received += OnReceived;
 		}
 
 		private static long _counter = DateTime.UtcNow.Ticks;
@@ -33,12 +31,7 @@ namespace Kts.Remoting
 				message.ID = ToBase62(Interlocked.Increment(ref _counter));
 			} while (!_sentMessages.TryAdd(message, source));
 
-			using (var ms = new MemoryStream()) // TODO: make a buffer pool
-			{
-				_serializer.Serialize(ms, message);
-				var args = new DataToSendArgs { Data = ms.GetBuffer() };
-				await _socket.Send(args);
-			}
+			await _handler.Handle(message);
 			return await source.Task;
 		}
 
@@ -59,15 +52,10 @@ namespace Kts.Remoting
 
 		public virtual void Dispose()
 		{
-			_socket.Received -= OnReceived;
 		}
 
-		private void OnReceived(object sender, DataReceivedArgs e)
+		public Task Handle(Message message)
 		{
-			Message message;
-			using(var stream = new MemoryStream(e.Data, 0, e.DataCount, false))
-				message = _serializer.Deserialize<Message>(stream);
-
 			dynamic source;
 			if (_sentMessages.TryRemove(message, out source))
 			{
@@ -76,6 +64,7 @@ namespace Kts.Remoting
 				else
 					FillSource(source, message);
 			}
+			return Task.FromResult(true);
 		}
 
 		private void FillSource<T>(TaskCompletionSource<T> source, Message message)

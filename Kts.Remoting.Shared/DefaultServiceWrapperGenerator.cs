@@ -13,9 +13,12 @@ using Microsoft.CSharp;
 
 namespace Kts.Remoting
 {
-	public class RoslynServiceWrapperGenerator : IServiceWrapperGenerator
+	/// <summary>
+	/// This uses Roslyn to create a wrapper around the service that parses the method parameters out of the message.
+	/// </summary>
+	public class DefaultServiceWrapperGenerator : IServiceWrapperGenerator
 	{
-		public IDisposable Create(ICommonTransport transport, ICommonSerializer serializer, object service, string serviceName = null)
+		public IMessageHandler Create(IMessageHandler handler, ICommonSerializer serializer, object service)
 		{
 			// subscribe to events on the service and forward them to the transport
 			// generate a method that can handle incoming messages
@@ -34,7 +37,7 @@ namespace Kts.Remoting
 			var assembly = CompileAndLoadClassDefinition(code, className, assemblies);
 
 			var type = assembly.GetType(className);
-			return (IDisposable)Activator.CreateInstance(type, transport, serializer);
+			return (IMessageHandler)Activator.CreateInstance(type, handler, serializer);
 		}
 
 		private readonly CSharpCodeProvider _provider = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
@@ -48,28 +51,46 @@ namespace Kts.Remoting
 		{
 			var sb = new StringBuilder();
 			sb.Append("public class ");
-			sb.AppendLine(className);
+			sb.Append(className);
+			sb.Append(": ");
+			sb.AppendLine(FormatType(typeof(IMessageHandler), assemblies));
 			sb.AppendLine("{");
 
 			sb.Append("\tpublic ");
 			sb.Append(className);
 			sb.Append("(");
-			sb.Append(FormatType(typeof(ICommonTransport), assemblies));
-			sb.Append(" socket, ");
+			sb.Append(FormatType(typeof(IMessageHandler), assemblies));
+			sb.Append(" handler, ");
 			sb.Append(FormatType(typeof(ICommonSerializer), assemblies));
-			sb.AppendLine(" serializer, string hubName) : base(socket, serializer) {}");
+			sb.AppendLine(" serializer) { _handler = handler; _serializer = serializer; }");
 
-				sb.Append("\tpublic ");
-			left off: we need some way to route the messages to the correct hub
-				sb.Append(FormatType(method.ReturnType, assemblies));
-				sb.Append(" ");
-
+			sb.Append("\tpublic async ");
+			sb.Append(FormatType(typeof(Task), assemblies));
+			sb.Append(" Send(");
+			sb.Append(FormatType(typeof(Message), assemblies));
+			sb.AppendLine(" message)");
+			sb.AppendLine("\t{");
+			sb.AppendLine("\tswitch(message.Method) {");
 
 			var methods = service.GetType().GetMethods().Where(m => m.IsPublic);
+			
+			var names = methods.Select(m => m.Name).ToList();
+			var distinct = names.Distinct().ToList();
+			if (names.Count != distinct.Count)
+				throw new ArgumentException("Method overloads are not supported (yet).");
+
 			foreach (var method in methods)
 			{
-				// we need to only deserialize that message once
-				// add the method name to the switch
+				// await it if possible
+				sb.Append("\t\tcase ");
+				sb.Append(method.Name);
+				sb.AppendLine(":");
+
+
+				left off:
+
+				sb.Append(FormatType(method.ReturnType, assemblies));
+				sb.Append(" ");
 
 				sb.Append(method.Name);
 				if (method.ContainsGenericParameters)
@@ -149,6 +170,6 @@ namespace Kts.Remoting
 				var assembly = Assembly.Load(ms.GetBuffer());
 				return assembly;
 			}
-
+		}
 	}
 }
