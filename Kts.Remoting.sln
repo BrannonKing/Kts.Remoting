@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.SystemWebsocke
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Owin", "Kts.Remoting.Owin\Kts.Remoting.Owin.csproj", "{C58D1FC3-F22F-4D24-9748-32E03B4B47A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Vtortola", "Kts.Remoting.Vtortola\Kts.Remoting.Vtortola.csproj", "{FB6794C2-E1B0-40DD-B7EB-49B0B8B2E49A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.WebSocket4Net", "Kts.Remoting.WebSocket4Net\Kts.Remoting.WebSocket4Net.csproj", "{0A89DB04-6185-4DCC-95D7-AF554B636A64}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +67,14 @@ Global
 		{C58D1FC3-F22F-4D24-9748-32E03B4B47A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C58D1FC3-F22F-4D24-9748-32E03B4B47A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C58D1FC3-F22F-4D24-9748-32E03B4B47A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB6794C2-E1B0-40DD-B7EB-49B0B8B2E49A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB6794C2-E1B0-40DD-B7EB-49B0B8B2E49A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB6794C2-E1B0-40DD-B7EB-49B0B8B2E49A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB6794C2-E1B0-40DD-B7EB-49B0B8B2E49A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A89DB04-6185-4DCC-95D7-AF554B636A64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A89DB04-6185-4DCC-95D7-AF554B636A64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A89DB04-6185-4DCC-95D7-AF554B636A64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A89DB04-6185-4DCC-95D7-AF554B636A64}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

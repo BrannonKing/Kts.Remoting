@@ -35,8 +35,6 @@ namespace Kts.Remoting.Shared
 		public void Dispose()
 		{
 			TransportSource.Received -= TransportSourceOnReceived;
-			foreach (var handler in _handlers.Values)
-				handler.Dispose();
 			_handlers.Clear();
 		}
 

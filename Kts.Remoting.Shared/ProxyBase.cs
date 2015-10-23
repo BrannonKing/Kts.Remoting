@@ -50,10 +50,6 @@ namespace Kts.Remoting.Shared
 			return str;
 		}
 
-		public virtual void Dispose()
-		{
-		}
-
 		public Task Handle(Message message)
 		{
 			dynamic source;

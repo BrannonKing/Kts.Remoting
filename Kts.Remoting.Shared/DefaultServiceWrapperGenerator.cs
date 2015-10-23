@@ -37,7 +37,7 @@ namespace Kts.Remoting.Shared
 			var assembly = CompileAndLoadClassDefinition(code, className, assemblies);
 
 			var type = assembly.GetType(className);
-			return (IMessageHandler)Activator.CreateInstance(type, handler, serializer);
+			return (IMessageHandler)Activator.CreateInstance(type, handler, serializer, service);
 		}
 
 		private readonly CSharpCodeProvider _provider = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
@@ -56,13 +56,17 @@ namespace Kts.Remoting.Shared
 			sb.AppendLine(FormatType(typeof(IMessageHandler), assemblies));
 			sb.AppendLine("{");
 
-			sb.Append("private readonly ");
+			sb.Append("\tprivate readonly ");
 			sb.Append(FormatType(typeof(IMessageHandler), assemblies));
 			sb.AppendLine(" _handler;");
 
-			sb.Append("private readonly ");
+			sb.Append("\tprivate readonly ");
 			sb.Append(FormatType(typeof(ICommonSerializer), assemblies));
 			sb.AppendLine(" _serializer;");
+
+			sb.Append("\tprivate readonly ");
+			sb.Append(FormatType(service.GetType(), assemblies));
+			sb.AppendLine(" _service;");
 
 			sb.Append("\tpublic ");
 			sb.Append(className);
@@ -70,15 +74,17 @@ namespace Kts.Remoting.Shared
 			sb.Append(FormatType(typeof(IMessageHandler), assemblies));
 			sb.Append(" handler, ");
 			sb.Append(FormatType(typeof(ICommonSerializer), assemblies));
-			sb.AppendLine(" serializer) { _handler = handler; _serializer = serializer; }");
+			sb.Append(" serializer, ");
+			sb.Append(FormatType(service.GetType(), assemblies));
+			sb.AppendLine(" service) { _handler = handler; _serializer = serializer; _service = service; }");
 
 			sb.Append("\tpublic async ");
 			sb.Append(FormatType(typeof(Task), assemblies));
-			sb.Append(" Send(");
+			sb.Append(" Handle(");
 			sb.Append(FormatType(typeof(Message), assemblies));
 			sb.AppendLine(" message)");
 			sb.AppendLine("\t{");
-			sb.AppendLine("\tswitch(message.Method) {");
+			sb.AppendLine("\t\tswitch(message.Method) {");
 
 			var methods = service.GetType().GetMethods().Where(m => m.IsPublic);
 			
@@ -97,9 +103,12 @@ namespace Kts.Remoting.Shared
 			int variable = 0;
 			foreach (var method in methods)
 			{
-				sb.Append("\t\tcase ");
+				if (method.DeclaringType == typeof(object))
+					continue;
+
+				sb.Append("\t\tcase \"");
 				sb.Append(method.Name);
-				sb.AppendLine(":");
+				sb.AppendLine("\":");
 
 				var startVar = variable;
 
@@ -128,28 +137,30 @@ namespace Kts.Remoting.Shared
 					sb.Append("\t\t\tvar result = ");
 					hasResult = true;
 				}
+				sb.Append("_service.");
 				sb.Append(method.Name);
 				sb.Append("(");
 				while(startVar < variable)
 				{
 					sb.Append("var");
 					sb.Append(startVar++);
-					if (startVar < variable - 1)
+					if (startVar < variable)
 						sb.Append(", ");
 				}
 				sb.AppendLine(");");
-				sb.AppendLine("message.Arguments = null;");
-				sb.AppendLine("message.Results = _serializer.GenerateContainer();");
+				sb.AppendLine("\t\t\tmessage.Arguments = null;");
+				sb.AppendLine("\t\t\tmessage.Results = _serializer.GenerateContainer();");
 				if (hasResult)
 				{
-					sb.AppendLine("_serializer.Serialize(message.Results, result);");
+					sb.AppendLine("\t\t\t_serializer.Serialize(message.Results, result);");
 				}
-				sb.AppendLine("await _handler.Send(message);");
+				sb.AppendLine("\t\t\tawait _handler.Handle(message);");
 				sb.AppendLine("\t\t\tbreak;");
 			}
 
 			sb.AppendLine("\t\t}");
 			sb.AppendLine("\t}");
+			sb.AppendLine("}");
 			return sb.ToString();
 		}
 
