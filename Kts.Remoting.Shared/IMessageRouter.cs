@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using CommonSerializer;
 
-namespace Kts.Remoting
+namespace Kts.Remoting.Shared
 {
 	public interface IMessageHandler: IDisposable
 	{

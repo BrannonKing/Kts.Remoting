@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Kts.Remoting;
+using Kts.Remoting.Shared;
 using Microsoft.Owin;
 
 namespace Kts.Remoting.Server
@@ -76,16 +75,15 @@ namespace Kts.Remoting.Server
 
 	#endregion
 
-	public class ProxyMiddleware : OwinMiddleware, ICommonTransport
+	public class ProxyMiddleware : OwinMiddleware, ITransportSource
 	{
-		private readonly ServiceRegistrationOptions _options;
-		private WebSocketSendAsync _sendAsync;
-
-		public ProxyMiddleware(OwinMiddleware next, ServiceRegistrationOptions options)
-			: base(next)
+		public ProxyMiddleware()
+			: base(null)
 		{
-			_options = options;
+			CancellationToken = CancellationToken.None;
 		}
+
+		public CancellationToken CancellationToken { get; set; }
 
 		public override async Task Invoke(IOwinContext context)
 		{
@@ -111,21 +109,12 @@ namespace Kts.Remoting.Server
 			accept.Invoke(null, RunReadLoop);
 		}
 
-		private readonly ConcurrentQueue<IDisposable> _wrappers = new ConcurrentQueue<IDisposable>();
 		private async Task RunReadLoop(IDictionary<string, object> websocketContext)
 		{
-			_options.FireOnConnectionReceived();
-
 			// can't get these before the accept call, apparently
-			_sendAsync = (WebSocketSendAsync)websocketContext["websocket.SendAsync"];
+			var sendAsync = (WebSocketSendAsync)websocketContext["websocket.SendAsync"];
 			var receiveAsync = (WebSocketReceiveAsync)websocketContext["websocket.ReceiveAsync"];
 			var closeAsync = (WebSocketCloseAsync)websocketContext["websocket.CloseAsync"];
-
-			foreach (var kvp in _options.Services)
-			{
-				var generated = _options.Generator.Create(this, _options.Serializer, kvp.Value, kvp.Key);
-				_wrappers.Enqueue(generated);
-			}
 
 			var buffer = new byte[8192];
 			var segment = new ArraySegment<byte>(buffer, 0, buffer.Length);
@@ -140,18 +129,15 @@ namespace Kts.Remoting.Server
 			{
 				try
 				{
-					if (_options.CancellationToken.IsCancellationRequested)
-						break;
-
 					WebSocketReceiveTuple received;
 					stream.SetLength(0);
 					do
 					{
-						received = await receiveAsync.Invoke(segment, _options.CancellationToken);
+						received = await receiveAsync.Invoke(segment, CancellationToken);
 						stream.Write(segment.Array, segment.Offset, received.Item3);
-					} while (!received.Item2 && !_options.CancellationToken.IsCancellationRequested);
+					} while (!received.Item2 && !CancellationToken.IsCancellationRequested);
 
-					if (_options.CancellationToken.IsCancellationRequested)
+					if (CancellationToken.IsCancellationRequested)
 						break;
 
 					var isClosed = (received.Item1 & CLOSE_OP) > 0;
@@ -161,18 +147,16 @@ namespace Kts.Remoting.Server
 					var isUTF8 = (received.Item1 & TEXT_OP) > 0;
 					var isCompressed = (received.Item1 & 0x40) > 0;
 
-					stream.Position = 0;
-
-					var args = new DataReceivedArgs();
+					var args = new DataReceivedArgs{SessionID = sendAsync};
 					if (isCompressed)
 					{
-						args.Data = Decompress(stream);
-						args.DataCount = args.Data.Length;
+						stream.Position = 0;
+						var array = Decompress(stream);
+						args.Data = new ArraySegment<byte>(array, 0, array.Length);
 					}
 					else
 					{
-						args.Data = stream.GetBuffer();
-						args.DataCount = (int)stream.Position;
+						args.Data = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
 					}
 
 					Received.Invoke(this, args);
@@ -194,14 +178,12 @@ namespace Kts.Remoting.Server
 				{
 					if (IsFatalSocketException(ex))
 					{
-						_options.FireOnError(ex);
+						throw;
 					}
 					break;
 				}
 			}
 			while (true);
-
-			//_options.FireOnDisconnected();
 		}
 
 		private static byte[] Compress(Stream input)
@@ -222,7 +204,7 @@ namespace Kts.Remoting.Server
 			{
 				input.CopyTo(compressor);
 				compressor.Close();
-				return compressStream.ToArray();
+				return compressStream.ToArray(); // TODO: we don't need to copy the array out
 			}
 		}
 
@@ -253,15 +235,14 @@ namespace Kts.Remoting.Server
 
 		public void Dispose()
 		{
-			IDisposable disposable;
-			while (_wrappers.TryDequeue(out disposable))
-				disposable.Dispose(); 
 		}
 
-		public Task Send(DataToSendArgs args)
+		public async Task Send(ArraySegment<byte> data, params object[] connectionIDs)
 		{
-			var segment = new ArraySegment<byte>(args.Data);
-			return _sendAsync.Invoke(segment, _options.Serializer.StreamsUtf8 ? TEXT_OP : BINARY_OP, true, _options.CancellationToken);
+			foreach (WebSocketSendAsync sender in connectionIDs)
+			{
+				await sender.Invoke(data, BINARY_OP, true, CancellationToken);
+			}
 		}
 
 		public event EventHandler<DataReceivedArgs> Received = delegate { };
@@ -274,9 +255,11 @@ namespace Owin
 
 	public static class OwinExtension
 	{
-		public static void RegisterServices(this IAppBuilder app, string route, ServiceRegistrationOptions options)
+		public static ITransportSource GenerateTransportSource(this IAppBuilder app, string route)
 		{
-			app.Map(route, config => config.Use<ProxyMiddleware>(options));
+			var source = new ProxyMiddleware();
+			app.Map(route, config => config.Use(source));
+			return source;
 		}
 	}
 }

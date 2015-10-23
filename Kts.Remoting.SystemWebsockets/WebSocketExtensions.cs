@@ -3,21 +3,20 @@ using System.IO;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Kts.Remoting.Shared;
 
 namespace Kts.Remoting.SystemWebsockets
 {
 	public static class ClientWebSocketExtensions
 	{
-		private class WebSocketTransport : ICommonTransport
+		private class WebSocketTransport : ITransportSource
 		{
 			private static readonly CancellationToken _cancellationToken = CancellationToken.None;
 			private readonly WebSocket _socket;
-			private readonly bool _isText;
 
-			public WebSocketTransport(WebSocket socket, bool isText)
+			public WebSocketTransport(WebSocket socket)
 			{
 				_socket = socket;
-				_isText = isText;
 				StartReceiving();
 			}
 
@@ -41,7 +40,8 @@ namespace Kts.Remoting.SystemWebsockets
 							ms.Write(segment.Array, segment.Offset, result.Count);
 						if (result.EndOfMessage)
 						{
-							var args = new DataReceivedArgs { DataCount = (int)ms.Position, Data = ms.GetBuffer() };
+							var data = new ArraySegment<byte>(ms.GetBuffer(), 0, (int) ms.Length);
+							var args = new DataReceivedArgs { Data = data, SessionID = _socket.GetHashCode() };
 							Received.Invoke(this, args); // assuming synchronous usage of the data: that may not be correct
 							ms.SetLength(0);
 						}
@@ -53,29 +53,25 @@ namespace Kts.Remoting.SystemWebsockets
 			{
 			}
 
-			public async Task Send(DataToSendArgs args)
+			public async Task Send(ArraySegment<byte> data, params object[] connectionIDs)
 			{
-				var segment = new ArraySegment<byte>(args.Data, 0, args.Data.Length);
-				await _socket.SendAsync(segment, _isText ? WebSocketMessageType.Text : WebSocketMessageType.Binary, true, _cancellationToken);
+				await _socket.SendAsync(data, WebSocketMessageType.Binary, true, _cancellationToken);
 			}
 
 			public event EventHandler<DataReceivedArgs> Received = delegate { };
 		}
 
-		public static T RegisterInterface<T>(this WebSocket socket, InterfaceRegistrationOptions options) where T : class
+		public static ITransportSource GenerateTransportSource(this WebSocket socket)
 		{
-			return options.Generator.Create<T>(new WebSocketTransport(socket, options.Serializer.StreamsUtf8), options.Serializer, options.ServiceName);
+			return new WebSocketTransport(socket);
 		}
 
-		public static void RegisterServices(this WebSocketContext context, ServiceRegistrationOptions options)
+		public static ITransportSource GenerateTransportSource(this WebSocketContext context)
 		{
 			// TODO: use these
 			var isLocal = context.IsLocal;
 			var user = context.User;
-			//var connectionId = context.
-			var transport = new WebSocketTransport(context.WebSocket, options.Serializer.StreamsUtf8);
-			foreach (var service in options.Services)
-				options.Generator.Create(transport, options.Serializer, service.Value, service.Key);
+			return new WebSocketTransport(context.WebSocket);
 		}
 	}
 }

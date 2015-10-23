@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using CommonSerializer;
 using Microsoft.IO;
 
-namespace Kts.Remoting
+namespace Kts.Remoting.Shared
 {
 	public class DefaultMessageRouter: IMessageRouter
 	{

@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer;
 
-namespace Kts.Remoting
+namespace Kts.Remoting.Shared
 {
 	public abstract class ProxyBase: IMessageHandler
 	{

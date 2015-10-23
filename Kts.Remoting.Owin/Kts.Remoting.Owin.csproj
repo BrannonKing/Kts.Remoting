@@ -75,6 +75,10 @@
       <Project>{6d8f5c82-4826-4008-90c1-0b8c4023c075}</Project>
       <Name>CommonSerializer</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Kts.Remoting.Shared\Kts.Remoting.Shared.csproj">
+      <Project>{ed7a2881-cc9e-45ea-964e-8b5bdd70cb21}</Project>
+      <Name>Kts.Remoting.Shared</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

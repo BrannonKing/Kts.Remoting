@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CSharp;
 
-namespace Kts.Remoting
+namespace Kts.Remoting.Shared
 {
 	/// <summary>
 	/// This uses Roslyn to create a wrapper around the service that parses the method parameters out of the message.
@@ -56,6 +56,14 @@ namespace Kts.Remoting
 			sb.AppendLine(FormatType(typeof(IMessageHandler), assemblies));
 			sb.AppendLine("{");
 
+			sb.Append("private readonly ");
+			sb.Append(FormatType(typeof(IMessageHandler), assemblies));
+			sb.AppendLine(" _handler;");
+
+			sb.Append("private readonly ");
+			sb.Append(FormatType(typeof(ICommonSerializer), assemblies));
+			sb.AppendLine(" _serializer;");
+
 			sb.Append("\tpublic ");
 			sb.Append(className);
 			sb.Append("(");
@@ -79,68 +87,69 @@ namespace Kts.Remoting
 			if (names.Count != distinct.Count)
 				throw new ArgumentException("Method overloads are not supported (yet).");
 
+			// loop through each method
+			// add a case for each
+			// for each parameter on each method
+			// decode the value and put it into a variable
+			// finally call the method with all the parameters
+			// awaiting it if it returns a task
+
+			int variable = 0;
 			foreach (var method in methods)
 			{
-				// await it if possible
 				sb.Append("\t\tcase ");
 				sb.Append(method.Name);
 				sb.AppendLine(":");
 
+				var startVar = variable;
 
-				left off:
-
-				sb.Append(FormatType(method.ReturnType, assemblies));
-				sb.Append(" ");
-
-				sb.Append(method.Name);
-				if (method.ContainsGenericParameters)
-				{
-					sb.Append('<');
-					foreach (var generic in method.GetGenericArguments())
-					{
-						sb.Append(FormatType(generic, assemblies));
-						sb.Append(",");
-					}
-					sb[sb.Length - 1] = '>';
-				}
-				sb.Append("(");
+				// TODO: handle generic methods, handle "out" and "ref" variables
+				// TODO: catch exceptions on the method and set the error string
 				var parameters = method.GetParameters();
-				for (int i = 0; i < parameters.Length; i++)
+				foreach (var parameter in parameters)
 				{
-					sb.Append(FormatType(parameters[i].ParameterType, assemblies));
-					sb.Append(" ");
-					sb.Append(parameters[i].Name);
-					if (i < parameters.Length - 1)
+					sb.Append("\t\t\tvar var");
+					sb.Append(variable++);
+					sb.Append(" = _serializer.Deserialize<");
+					sb.Append(FormatType(parameter.ParameterType, assemblies));
+					sb.AppendLine(">(message.Arguments);");
+				}
+
+				bool hasResult = false;
+				if (typeof(Task) == method.ReturnType)
+					sb.Append("\t\t\tawait ");
+				else if (typeof(Task).IsAssignableFrom(method.ReturnType))
+				{
+					sb.Append("\t\t\tvar result = await ");
+					hasResult = true;
+				}
+				else if (typeof(void) != method.ReturnType)
+				{
+					sb.Append("\t\t\tvar result = ");
+					hasResult = true;
+				}
+				sb.Append(method.Name);
+				sb.Append("(");
+				while(startVar < variable)
+				{
+					sb.Append("var");
+					sb.Append(startVar++);
+					if (startVar < variable - 1)
 						sb.Append(", ");
 				}
-				sb.AppendLine(")");
-				sb.AppendLine("\t{");
-				sb.Append("\t\tvar msg = new ");
-				sb.Append(FormatType(typeof(Message), assemblies));
-				sb.AppendLine("();");
-				sb.Append("\t\tmsg.Method = \"");
-				sb.Append(method.Name);
-				sb.AppendLine("\";");
-				sb.AppendLine("\t\tmsg.Arguments = _serializer.GenerateContainer();");
-
-				// now serialize the parameters
-				for (int i = 0; i < parameters.Length; i++)
+				sb.AppendLine(");");
+				sb.AppendLine("message.Arguments = null;");
+				sb.AppendLine("message.Results = _serializer.GenerateContainer();");
+				if (hasResult)
 				{
-					sb.Append("\t\t_serializer.Serialize(msg.Arguments, ");
-					sb.Append(parameters[i].Name);
-					sb.AppendLine(");");
+					sb.AppendLine("_serializer.Serialize(message.Results, result);");
 				}
-
-				sb.Append("\t\treturn Send<");
-				if (method.ReturnType == typeof(Task))
-					sb.Append("bool");
-				else
-					sb.Append(FormatType(method.ReturnType.GetGenericArguments().Single(), assemblies));
-				sb.AppendLine(">(msg);");
-				sb.AppendLine("\t}");
+				sb.AppendLine("await _handler.Send(message);");
+				sb.AppendLine("\t\t\tbreak;");
 			}
 
-			sb.AppendLine("}");
+			sb.AppendLine("\t\t}");
+			sb.AppendLine("\t}");
 			return sb.ToString();
 		}
 

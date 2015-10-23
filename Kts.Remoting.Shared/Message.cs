@@ -1,7 +1,7 @@
-﻿using CommonSerializer;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
+using CommonSerializer;
 
-namespace Kts.Remoting
+namespace Kts.Remoting.Shared
 {
 	[DataContract]
 	public sealed class Message

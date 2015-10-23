@@ -1,6 +1,6 @@
 using CommonSerializer;
 
-namespace Kts.Remoting
+namespace Kts.Remoting.Shared
 {
 	public interface IProxyObjectGenerator
 	{

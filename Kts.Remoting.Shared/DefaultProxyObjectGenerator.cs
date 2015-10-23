@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CSharp;
 
-namespace Kts.Remoting
+namespace Kts.Remoting.Shared
 {
 	/// <summary>
 	/// Uses Roslyn to compile a proxy object implementing the specified interface.
