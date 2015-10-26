@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.WebSockets;
 using System.Threading;
@@ -41,7 +42,7 @@ namespace Kts.Remoting.SystemWebsockets
 						if (result.EndOfMessage)
 						{
 							var data = new ArraySegment<byte>(ms.GetBuffer(), 0, (int) ms.Length);
-							var args = new DataReceivedArgs { Data = data, SessionID = _socket.GetHashCode() };
+							var args = new DataReceivedArgs { Data = data, SessionID = _socket };
 							Received.Invoke(this, args); // assuming synchronous usage of the data: that may not be correct
 							ms.SetLength(0);
 						}
@@ -55,7 +56,19 @@ namespace Kts.Remoting.SystemWebsockets
 
 			public async Task Send(ArraySegment<byte> data, params object[] connectionIDs)
 			{
-				await _socket.SendAsync(data, WebSocketMessageType.Binary, true, _cancellationToken);
+				var tasks = new List<Task>(connectionIDs.Length);
+				foreach (var socket in connectionIDs)
+				{
+					if (socket is WebSocket)
+					{
+						tasks.Add(_socket.SendAsync(data, WebSocketMessageType.Binary, true, _cancellationToken));
+					}
+				}
+
+				if (tasks.Count > 0)
+					await Task.WhenAll(tasks);
+				else
+					await _socket.SendAsync(data, WebSocketMessageType.Binary, true, _cancellationToken);
 			}
 
 			public event EventHandler<DataReceivedArgs> Received = delegate { };

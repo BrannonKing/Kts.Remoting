@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Kts.Remoting.Shared;
 using NetMQ;
 using NetMQ.Sockets;
 
-namespace Kts.Remoting.NetMQ
+// ReSharper disable once CheckNamespace
+namespace Kts.Remoting.Shared
 {
 	public class NetMQSocketTransportSource : ITransportSource
 	{
 		private readonly NetMQSocket _socket;
 		private readonly NetMQScheduler _scheduler;
-		private readonly bool _createdScheduler;
 
 		public NetMQSocketTransportSource(NetMQSocket socket, NetMQScheduler scheduler)
 		{
@@ -20,17 +19,9 @@ namespace Kts.Remoting.NetMQ
 			_socket.ReceiveReady += OnReceiveMessage;
 		}
 
-		public NetMQSocketTransportSource(NetMQContext context, NetMQSocket socket, Poller poller = null)
-			: this(socket, new NetMQScheduler(context, poller))
-		{
-			_createdScheduler = true;
-		}
-
 		public virtual void Dispose()
 		{
 			_socket.ReceiveReady -= OnReceiveMessage;
-			if (_createdScheduler)
-				_scheduler.Dispose();
 		}
 
 		public event EventHandler<DataReceivedArgs> Received = delegate { };
@@ -52,8 +43,8 @@ namespace Kts.Remoting.NetMQ
 				{
 					msg.Append(new byte[0]);
 					msg.AppendEmptyFrame();
-					msg.Append(data.Count == data.Array.Length ? data.Array : data.ToArray());
 				}
+				msg.Append(data.Count == data.Array.Length ? data.Array : data.ToArray());
 
 				if (connectionIDs.Length <= 0)
 					_socket.SendMultipartMessage(msg);

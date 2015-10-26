@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer.Json.NET;
 using Kts.Remoting.Shared;
-using vtortola.WebSockets;
 using Xunit;
-using WebSocket = WebSocket4Net.WebSocket;
+using WebSocketSharp;
+using WebSocketSharp.Server;
 
 namespace Kts.Remoting.Tests
 {
-	public class Websocket4NetToVtortola
+	public class WebsocketSharpFullCircle
 	{
 		public interface IMyService
 		{
@@ -32,35 +30,28 @@ namespace Kts.Remoting.Tests
 
 			var port = new Random().Next(6000, 60000);
 
-			var options = new WebSocketListenerOptions();
-			options.SubProtocols = new[] { "unit test" };
-			var listener = new WebSocketListener(new IPEndPoint(IPAddress.Loopback, port), options);
-			var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(listener);
-			listener.Standards.RegisterStandard(rfc6455);
-			var serverTransport = listener.GenerateTransportSource();
+			var listener = new WebSocketServer("ws://localhost:" + port);
+			var serverTransport = listener.GenerateTransportSource("/p1");
 			var serverRouter = new DefaultMessageRouter(serverTransport, serializer);
 			serverRouter.AddService<IMyService>(new MyService());
 			listener.Start();
 
-			var client = new WebSocket("ws://localhost:" + port + "/", "unit test", global::WebSocket4Net.WebSocketVersion.Rfc6455);
+			var client = new WebSocket("ws://localhost:" + port + "/p1");
 			var clientTransport = client.GenerateTransportSource();
 			var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
 			var proxy = clientRouter.AddInterface<IMyService>();
-			client.Open();
-
-			while (client.State != global::WebSocket4Net.WebSocketState.Open)
-				Thread.Sleep(10);
+			client.Connect();
 
 			var result = proxy.Add(3, 4).Result;
 			Assert.Equal(7, result);
 
 			clientRouter.Dispose();
 			clientTransport.Dispose();
-			client.Dispose();
+			client.Close();
 
 			serverRouter.Dispose();
 			serverTransport.Dispose();
-			listener.Dispose();
+			listener.Stop();
 		}
 	}
 }

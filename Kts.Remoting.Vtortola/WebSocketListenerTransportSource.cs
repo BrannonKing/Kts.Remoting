@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kts.Remoting.Shared;
 using Microsoft.IO;
 using vtortola.WebSockets;
 
-namespace Kts.Remoting.Vtortola
+// ReSharper disable once CheckNamespace
+namespace Kts.Remoting.Shared
 {
 	public class WebSocketListenerTransportSource : ITransportSource
 	{

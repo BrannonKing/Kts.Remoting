@@ -1,5 +1,4 @@
-﻿using Kts.Remoting.WebSocket4Net;
-using WebSocket4Net;
+﻿using WebSocket4Net;
 
 // ReSharper disable once CheckNamespace
 namespace Kts.Remoting.Shared

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Kts.Remoting.Shared;
 using WebSocketSharp.Server;
 
-namespace Kts.Remoting.WebSocketSharp
+// ReSharper disable once CheckNamespace
+namespace Kts.Remoting.Shared
 {
 	public class WebSocketSharpServerBehavior : WebSocketBehavior
 	{
@@ -15,7 +15,7 @@ namespace Kts.Remoting.WebSocketSharp
 			_source = source;
 		}
 
-		protected override void OnMessage(global::WebSocketSharp.MessageEventArgs e)
+		protected override void OnMessage(WebSocketSharp.MessageEventArgs e)
 		{
 			var args = new DataReceivedArgs
 			{

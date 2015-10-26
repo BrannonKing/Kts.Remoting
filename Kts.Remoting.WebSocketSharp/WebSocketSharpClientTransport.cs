@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Kts.Remoting.Shared;
 using WebSocketSharp;
 
-namespace Kts.Remoting.WebSocketSharp
+// ReSharper disable once CheckNamespace
+namespace Kts.Remoting.Shared
 {
 	public class WebSocketSharpClientTransport : ITransportSource
 	{

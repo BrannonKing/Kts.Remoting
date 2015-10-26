@@ -1,5 +1,4 @@
-﻿using Kts.Remoting.WebSocketSharp;
-using WebSocketSharp.Server;
+﻿using WebSocketSharp.Server;
 using WebSocket = WebSocketSharp.WebSocket;
 
 // ReSharper disable once CheckNamespace

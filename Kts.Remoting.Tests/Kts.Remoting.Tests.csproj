@@ -73,6 +73,7 @@
       <HintPath>..\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -117,8 +118,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="WebsocketSharpRoundTrip.cs" />
-    <Compile Include="Websocket4NetToVtortola.cs" />
+    <Compile Include="NetMQFullCircle.cs" />
+    <Compile Include="EverytingToOwin.cs" />
+    <Compile Include="SystemWebSocketsFullCircle.cs" />
+    <Compile Include="WebsocketSharpFullCircle.cs" />
+    <Compile Include="Websocket4NetToVtortolaCircle.cs" />
     <Compile Include="SerializerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

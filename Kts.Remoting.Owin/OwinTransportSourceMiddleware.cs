@@ -5,10 +5,11 @@ using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Kts.Remoting.Shared;
 using Microsoft.Owin;
+using AppFunc = System.Func<System.Collections.Generic.IDictionary<string, object>, System.Threading.Tasks.Task>;
 
-namespace Kts.Remoting.Server
+// ReSharper disable once CheckNamespace
+namespace Kts.Remoting.Shared
 {
 	#region Websocket Method Definitions
 
@@ -75,17 +76,16 @@ namespace Kts.Remoting.Server
 
 	#endregion
 
-	public class ProxyMiddleware : OwinMiddleware, ITransportSource
+	public class OwinTransportSourceMiddleware : ITransportSource
 	{
-		public ProxyMiddleware()
-			: base(null)
+		public OwinTransportSourceMiddleware()
 		{
 			CancellationToken = CancellationToken.None;
 		}
 
 		public CancellationToken CancellationToken { get; set; }
 
-		public override async Task Invoke(IOwinContext context)
+		public void Invoke(IOwinContext context)
 		{
 			var accept = context.Get<WebSocketAccept>("websocket.Accept");
 			if (accept == null)
@@ -147,7 +147,7 @@ namespace Kts.Remoting.Server
 					var isUTF8 = (received.Item1 & TEXT_OP) > 0;
 					var isCompressed = (received.Item1 & 0x40) > 0;
 
-					var args = new DataReceivedArgs{SessionID = sendAsync};
+					var args = new DataReceivedArgs { SessionID = sendAsync };
 					if (isCompressed)
 					{
 						stream.Position = 0;
@@ -156,7 +156,7 @@ namespace Kts.Remoting.Server
 					}
 					else
 					{
-						args.Data = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+						args.Data = new ArraySegment<byte>(stream.GetBuffer(), 0, (int) stream.Length);
 					}
 
 					Received.Invoke(this, args);
@@ -184,6 +184,7 @@ namespace Kts.Remoting.Server
 				}
 			}
 			while (true);
+			stream.Dispose();
 		}
 
 		private static byte[] Compress(Stream input)
@@ -251,14 +252,21 @@ namespace Kts.Remoting.Server
 
 namespace Owin
 {
-	using Kts.Remoting.Server;
+	using Kts.Remoting.Shared;
 
 	public static class OwinExtension
 	{
 		public static ITransportSource GenerateTransportSource(this IAppBuilder app, string route)
 		{
-			var source = new ProxyMiddleware();
-			app.Map(route, config => config.Use(source));
+			var source = new OwinTransportSourceMiddleware();
+			app.Map(route, app2 =>
+			{
+				app2.Run(context =>
+				{
+					source.Invoke(context);
+					return Task.FromResult(true);
+				});
+			});
 			return source;
 		}
 	}

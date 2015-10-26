@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using Kts.Remoting.Shared;
 using WebSocket4Net;
 
-namespace Kts.Remoting.WebSocket4Net
+// ReSharper disable once CheckNamespace
+namespace Kts.Remoting.Shared
 {
 	public class WebSocketTransportSource : ITransportSource
 	{

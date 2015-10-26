@@ -1,5 +1,4 @@
-﻿using Kts.Remoting.Vtortola;
-using vtortola.WebSockets;
+﻿using vtortola.WebSockets;
 
 // ReSharper disable once CheckNamespace
 namespace Kts.Remoting.Shared
