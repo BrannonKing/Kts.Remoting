@@ -117,7 +117,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BasicRoundTrip.cs" />
+    <Compile Include="WebsocketSharpRoundTrip.cs" />
+    <Compile Include="Websocket4NetToVtortola.cs" />
     <Compile Include="SerializerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

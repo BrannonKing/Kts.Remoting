@@ -6,11 +6,11 @@ using WebSocketSharp;
 
 namespace Kts.Remoting.WebSocketSharp
 {
-	public class WebSocketSharpTransport : ITransportSource
+	public class WebSocketSharpClientTransport : ITransportSource
 	{
 		protected readonly WebSocket _socket;
 
-		public WebSocketSharpTransport(WebSocket socket)
+		public WebSocketSharpClientTransport(WebSocket socket)
 		{
 			_socket = socket;
 			_socket.OnMessage += OnMessageReceived;

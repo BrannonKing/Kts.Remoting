@@ -51,7 +51,7 @@ namespace Kts.Remoting.Vtortola
 				var message = await socket.ReadMessageAsync(_tokenSource.Token);
 				if (message != null)
 				{
-					using (var ms = _streamManager.GetStream("VtortolaReceived", (int)message.Length))
+					using (var ms = _streamManager.GetStream("VtortolaReceived")) // length was throwing an exception
 					{
 						message.CopyTo(ms);
 						var segment = new ArraySegment<byte>(ms.GetBuffer(), 0, (int)ms.Length);

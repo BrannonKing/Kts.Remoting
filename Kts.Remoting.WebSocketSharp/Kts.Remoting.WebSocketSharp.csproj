@@ -46,7 +46,9 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebSocketExtensions.cs" />
-    <Compile Include="WebSocketSharpTransport.cs" />
+    <Compile Include="WebSocketSharpClientTransport.cs" />
+    <Compile Include="WebSocketSharpServerBehavior.cs" />
+    <Compile Include="WebSocketSharpServerTransportSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

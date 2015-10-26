@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer.Json.NET;
@@ -13,7 +10,7 @@ using WebSocket = WebSocket4Net.WebSocket;
 
 namespace Kts.Remoting.Tests
 {
-	public class BasicRoundTrip
+	public class Websocket4NetToVtortola
 	{
 		public interface IMyService
 		{
@@ -29,13 +26,15 @@ namespace Kts.Remoting.Tests
 		}
 
 		[Fact]
-		public void WebSocket4NetToVtortola()
+		public void BasicRoundTrip()
 		{
 			var serializer = new JsonCommonSerializer();
 
+			var port = new Random().Next(6000, 60000);
+
 			var options = new WebSocketListenerOptions();
 			options.SubProtocols = new[] { "unit test" };
-			var listener = new WebSocketListener(new IPEndPoint(IPAddress.Loopback, 6122), options);
+			var listener = new WebSocketListener(new IPEndPoint(IPAddress.Loopback, port), options);
 			var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(listener);
 			listener.Standards.RegisterStandard(rfc6455);
 			var serverTransport = listener.GenerateTransportSource();
@@ -43,7 +42,7 @@ namespace Kts.Remoting.Tests
 			serverRouter.AddService<IMyService>(new MyService());
 			listener.Start();
 
-			var client = new WebSocket("ws://localhost:6122/", "unit test", global::WebSocket4Net.WebSocketVersion.Rfc6455);
+			var client = new WebSocket("ws://localhost:" + port + "/", "unit test", global::WebSocket4Net.WebSocketVersion.Rfc6455);
 			var clientTransport = client.GenerateTransportSource();
 			var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
 			var proxy = clientRouter.AddInterface<IMyService>();
