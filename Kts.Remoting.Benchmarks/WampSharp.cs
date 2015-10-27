@@ -33,14 +33,15 @@ namespace Kts.Remoting.Benchmarks
 
 			var channel = factory.ConnectToRealm("realm1")
 				.WebSocketTransport("ws://127.0.0.1:8080/")
-				.JsonSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
+				.MsgpackSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
+				//.JsonSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
 				//.CraAuthentication(authenticationId: "peter", secret: "secret1")
 				.Build();
 
 			channel.RealmProxy.Monitor.ConnectionEstablished += (sender, eventArgs) => _testOutputHelper.WriteLine("Connected with ID " + eventArgs.SessionId);
 
 			channel.Open().Wait();
-
+				
 			var proxy = channel.RealmProxy.Services.GetCalleeProxy<ISumService>(new CallerNameInterceptor());
 
 			const int randCnt = 100;
@@ -91,8 +92,8 @@ namespace Kts.Remoting.Benchmarks
 		private static IDisposable StartServer()
 		{
 			var host = new WampHost();
-			host.RegisterTransport(new VtortolaWebSocketTransport(new IPEndPoint(IPAddress.Loopback, 8080), false),
-				new JTokenJsonBinding());
+			host.RegisterTransport(new VtortolaWebSocketTransport(new IPEndPoint(IPAddress.Loopback, 8080), true),
+				new JTokenJsonBinding(), new JTokenMsgpackBinding());
 
 			host.Open();
 

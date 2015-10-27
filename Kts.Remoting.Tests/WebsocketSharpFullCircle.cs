@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CommonSerializer.Json.NET;
+using CommonSerializer.ProtobufNet;
 using Kts.Remoting.Benchmarks;
 using Kts.Remoting.Shared;
 using Xunit;
@@ -68,7 +69,7 @@ namespace Kts.Remoting.Tests
 		[Fact]
 		public void Benchmark()
 		{
-			var serializer = new JsonCommonSerializer();
+			var serializer = new ProtobufCommonSerializer();// new JsonCommonSerializer();
 
 			var port = new Random().Next(6000, 60000);
 

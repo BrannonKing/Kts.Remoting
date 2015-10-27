@@ -23,7 +23,7 @@ namespace Kts.Remoting.Tests
 			_testOutputHelper = testOutputHelper;
 		}
 
-	public interface IMyService
+		public interface IMyService
 		{
 			Task<int> Add(int a, int b);
 		}

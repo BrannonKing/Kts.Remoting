@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer.Json.NET;
+using CommonSerializer.ProtobufNet;
 using Kts.Remoting.Benchmarks;
 using Kts.Remoting.Shared;
 using Microsoft.Owin.Hosting;
@@ -40,10 +41,11 @@ namespace Kts.Remoting.Tests
 		{
 			public void Configuration(IAppBuilder app)
 			{
-				var serializer = new JsonCommonSerializer();
+				var serializer = new ProtobufCommonSerializer(); // new JsonCommonSerializer();
 				var source = app.GenerateTransportSource("/rt1");
 				var serverRouter = new DefaultMessageRouter(source, serializer);
 				serverRouter.AddService<IMyService>(new MyService());
+				serverRouter.AddService<ISumService>(new SumService());
 			}
 		}
 
@@ -101,9 +103,9 @@ namespace Kts.Remoting.Tests
 		}
 
 		[Fact]
-		public void BenchmarkMessages()
+		public void BenchmarkMessagesWebSocketSharp()
 		{
-			var serializer = new JsonCommonSerializer();
+			var serializer = new ProtobufCommonSerializer(); // JsonCommonSerializer();
 			var port = new Random().Next(20000, 60000);
 
 			var url = "http://localhost:" + port + "/";

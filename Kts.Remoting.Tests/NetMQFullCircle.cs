@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer;
 using CommonSerializer.Json.NET;
+using CommonSerializer.ProtobufNet;
 using Kts.Remoting.Benchmarks;
 using Kts.Remoting.Shared;
 using Xunit;
@@ -122,7 +123,7 @@ namespace Kts.Remoting.Tests
 		[Fact]
 		public void Benchmark()
 		{
-			var serializer = new JsonCommonSerializer();
+			var serializer = new ProtobufCommonSerializer();// new JsonCommonSerializer();
 			int port = -1;
 			Poller client = null, server = null;
 			var serverThread = RunServer<ISumService>(serializer, p => port = p, p => server = p, new SumService());
