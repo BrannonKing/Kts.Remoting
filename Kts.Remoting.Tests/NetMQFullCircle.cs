@@ -1,17 +1,27 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer;
 using CommonSerializer.Json.NET;
+using Kts.Remoting.Benchmarks;
 using Kts.Remoting.Shared;
 using Xunit;
 using NetMQ;
-using NetMQ.Monitoring;
+using Xunit.Abstractions;
 
 namespace Kts.Remoting.Tests
 {
 	public class NetMQFullCircle
 	{
+		private readonly ITestOutputHelper _testOutputHelper;
+
+		public NetMQFullCircle(ITestOutputHelper testOutputHelper)
+		{
+			_testOutputHelper = testOutputHelper;
+		}
+
 		public interface IMyService
 		{
 			Task<int> Add(int a, int b);
@@ -25,7 +35,8 @@ namespace Kts.Remoting.Tests
 			}
 		}
 
-		private Task RunServer(ICommonSerializer serializer, Action<int> loadPort, Action<Poller> loadPoller)
+		private Task RunServer<T>(ICommonSerializer serializer, Action<int> loadPort, Action<Poller> loadPoller, T service)
+			where T:class
 		{
 			var task = new Task(() =>
 			{
@@ -35,8 +46,8 @@ namespace Kts.Remoting.Tests
 				var serverScheduler = new NetMQScheduler(serverContext, serverPoller);
 				var serverTransport = serverSocket.GenerateTransportSource(serverScheduler);
 				var serverRouter = new DefaultMessageRouter(serverTransport, serializer);
-				serverRouter.AddService<IMyService>(new MyService());
-				var port = serverSocket.BindRandomPort("tcp://127.0.0.1");
+				serverRouter.AddService(service);
+				var port = serverSocket.BindRandomPort("tcp://localhost");
 				loadPoller.Invoke(serverPoller);
 				loadPort.Invoke(port);
 
@@ -53,7 +64,8 @@ namespace Kts.Remoting.Tests
 			return task;
 		}
 
-		private Task RunClient(ICommonSerializer serializer, int port, Action<Poller> loadPoller, Action<IMyService> loadProxy)
+		private Task RunClient<T>(ICommonSerializer serializer, int port, Action<Poller> loadPoller, Action<T> loadProxy)
+			where T:class
 		{
 			var task = new Task(() =>
 			{
@@ -64,8 +76,8 @@ namespace Kts.Remoting.Tests
 				var clientScheduler = new NetMQScheduler(clientContext, clientPoller);
 				var clientTransport = clientSocket.GenerateTransportSource(clientScheduler);
 				var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
-				var proxy = clientRouter.AddInterface<IMyService>();
-				clientSocket.Connect("tcp://127.0.0.1:" + port);
+				var proxy = clientRouter.AddInterface<T>();
+				clientSocket.Connect("tcp://localhost:" + port);
 				loadPoller.Invoke(clientPoller);
 				loadProxy.Invoke(proxy);
 
@@ -88,17 +100,66 @@ namespace Kts.Remoting.Tests
 			var serializer = new JsonCommonSerializer();
 			int port = -1;
 			Poller client = null, server = null;
-			var serverThread = RunServer(serializer, p => port = p, p => server = p);
+			var serverThread = RunServer<IMyService>(serializer, p => port = p, p => server = p, new MyService());
 			while (port == -1)
 				Thread.Yield();
 			IMyService proxy = null;
-			var clientThread = RunClient(serializer, port, p => client = p, p => proxy = p);
+			var clientThread = RunClient<IMyService>(serializer, port, p => client = p, p => proxy = p);
 
 			while(proxy == null)
 				Thread.Yield();
 
 			var result = proxy.Add(3, 4).Result;
 			Assert.Equal(7, result);
+
+			client.CancelAndJoin();
+			server.CancelAndJoin();
+
+			clientThread.Wait();
+			serverThread.Wait();
+		}
+
+		[Fact]
+		public void Benchmark()
+		{
+			var serializer = new JsonCommonSerializer();
+			int port = -1;
+			Poller client = null, server = null;
+			var serverThread = RunServer<ISumService>(serializer, p => port = p, p => server = p, new SumService());
+			while (port == -1)
+				Thread.Yield();
+			ISumService proxy = null;
+			var clientThread = RunClient<ISumService>(serializer, port, p => client = p, p => proxy = p);
+
+			while (proxy == null)
+				Thread.Yield();
+
+			const int randCnt = 100;
+			var rand = new Random(42);
+			var randoms = new int[randCnt];
+			for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+
+			var sw = new Stopwatch();
+			for (int j = 0; j < 500; j++)
+			{
+				sw.Start();
+				var sum = proxy.Sum(randoms).Result;
+				sw.Stop();
+				Assert.Equal(randoms.Sum(), sum);
+				for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+			}
+
+			_testOutputHelper.WriteLine("Completed 500 sum passes in {0}ms", sw.Elapsed.TotalMilliseconds);
+
+			sw.Reset();
+			var tree = new SumServiceTree();
+			SumServiceTree.FillTree(tree, rand, 2);
+			_testOutputHelper.WriteLine("Starting large message transfer.");
+			sw.Start();
+			var result = proxy.Increment(tree).Result;
+			sw.Stop();
+			Assert.Equal(tree.Leaf + 1, result.Leaf);
+			_testOutputHelper.WriteLine("Completed large transfer in {0}ms", sw.Elapsed.TotalMilliseconds);
 
 			client.CancelAndJoin();
 			server.CancelAndJoin();

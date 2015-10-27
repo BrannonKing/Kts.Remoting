@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.WebSockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 using CommonSerializer.Json.NET;
 using Kts.Remoting.Shared;
-using Kts.Remoting.SystemWebsockets;
 using Xunit;
 
 namespace Kts.Remoting.Tests
@@ -30,22 +25,24 @@ namespace Kts.Remoting.Tests
 		}
 
 		[Fact]
-		public void ContextualServer()
+		public void BasicRoundTrip()
 		{
 			var serializer = new JsonCommonSerializer();
 
-			var listener = new HttpListener();
-			listener.Prefixes.Add("http://127.0.0.1:20000/");
-			listener.Start();
-
-			var task = StartListening(listener);
+			var server = new HttpListener();
+			server.Prefixes.Add("http://localhost:20000/");
+			server.Start();
+			var serverTransport = server.GenerateTransportSource();
+			var serverRouter = new DefaultMessageRouter(serverTransport, serializer);
+			serverRouter.AddService<IMyService>(new MyService());
 
 			var client = new ClientWebSocket();
+			client.Options.SetBuffer(8192, 8192);
 			var clientTransport = client.GenerateTransportSource();
 			var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
 			var proxy = clientRouter.AddInterface<IMyService>();
 
-			client.ConnectAsync(new Uri("ws://127.0.0.1:20000/"), CancellationToken.None).Wait();
+			client.ConnectAsync(new Uri("ws://localhost:20000/"), CancellationToken.None).Wait();
 
 			var result = proxy.Add(3, 4).Result;
 			Assert.Equal(7, result);
@@ -54,21 +51,10 @@ namespace Kts.Remoting.Tests
 			clientTransport.Dispose();
 			client.Dispose();
 
-		}
-
-		private async Task StartListening(HttpListener listener)
-		{
-			var context = await listener.GetContextAsync();
-			if (context.Request.IsWebSocketRequest
-			do
-			{
-				var socket = await context.AcceptWebSocketAsync("unit test");
-				if (!socket.Request.IsWebSocketRequest
-				var source = socket.GenerateTransportSource();
-			} while ();
-
-
-
+			serverRouter.Dispose();
+			serverTransport.Dispose();
+			server.Stop();
+			server.Close();
 		}
 	}
 }

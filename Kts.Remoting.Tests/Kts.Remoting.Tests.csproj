@@ -118,9 +118,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Kts.Remoting.Benchmarks\SumService.cs">
+      <Link>SumService.cs</Link>
+    </Compile>
     <Compile Include="NetMQFullCircle.cs" />
     <Compile Include="EverytingToOwin.cs" />
     <Compile Include="SystemWebSocketsFullCircle.cs" />
+    <Compile Include="SystemWebSocketsToVtortolaCircle.cs" />
     <Compile Include="WebsocketSharpFullCircle.cs" />
     <Compile Include="Websocket4NetToVtortolaCircle.cs" />
     <Compile Include="SerializerTests.cs" />

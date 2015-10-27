@@ -100,15 +100,14 @@ namespace Kts.Remoting.Shared
 			// finally call the method with all the parameters
 			// awaiting it if it returns a task
 
-			int variable = 0;
+			int variable = 0, result = 0;
 			foreach (var method in methods)
 			{
 				if (method.DeclaringType == typeof(object))
 					continue;
 
-				sb.Append("\t\tcase \"");
-				sb.Append(method.Name);
-				sb.AppendLine("\":");
+				sb.AppendFormat("\t\tcase \"{0}\":", method.Name);
+				sb.AppendLine();
 
 				var startVar = variable;
 
@@ -117,9 +116,7 @@ namespace Kts.Remoting.Shared
 				var parameters = method.GetParameters();
 				foreach (var parameter in parameters)
 				{
-					sb.Append("\t\t\tvar var");
-					sb.Append(variable++);
-					sb.Append(" = _serializer.Deserialize<");
+					sb.AppendFormat("\t\t\tvar var{0} = _serializer.Deserialize<", variable++);
 					sb.Append(FormatType(parameter.ParameterType, assemblies));
 					sb.AppendLine(">(message.Arguments);");
 				}
@@ -129,17 +126,15 @@ namespace Kts.Remoting.Shared
 					sb.Append("\t\t\tawait ");
 				else if (typeof(Task).IsAssignableFrom(method.ReturnType))
 				{
-					sb.Append("\t\t\tvar result = await ");
+					sb.AppendFormat("\t\t\tvar result{0} = await ", result);
 					hasResult = true;
 				}
 				else if (typeof(void) != method.ReturnType)
 				{
-					sb.Append("\t\t\tvar result = ");
+					sb.AppendFormat("\t\t\tvar result{0} = ", result);
 					hasResult = true;
 				}
-				sb.Append("_service.");
-				sb.Append(method.Name);
-				sb.Append("(");
+				sb.AppendFormat("_service.{0}(", method.Name);
 				while(startVar < variable)
 				{
 					sb.Append("var");
@@ -152,7 +147,8 @@ namespace Kts.Remoting.Shared
 				sb.AppendLine("\t\t\tmessage.Results = _serializer.GenerateContainer();");
 				if (hasResult)
 				{
-					sb.AppendLine("\t\t\t_serializer.Serialize(message.Results, result);");
+					sb.AppendFormat("\t\t\t_serializer.Serialize(message.Results, result{0});", result++);
+					sb.AppendLine();
 				}
 				sb.AppendLine("\t\t\tawait _handler.Handle(message);");
 				sb.AppendLine("\t\t\tbreak;");

@@ -1,27 +1,29 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Net.WebSockets;
+using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer.Json.NET;
 using Kts.Remoting.Benchmarks;
 using Kts.Remoting.Shared;
+using vtortola.WebSockets;
 using Xunit;
-using WebSocketSharp.Server;
 using Xunit.Abstractions;
-using WebSocket = WebSocketSharp.WebSocket;
 
 namespace Kts.Remoting.Tests
 {
-	public class WebsocketSharpFullCircle
+	public class SystemWebSocketsToVtortolaCircle
 	{
 		private readonly ITestOutputHelper _testOutputHelper;
 
-		public WebsocketSharpFullCircle(ITestOutputHelper testOutputHelper)
+		public SystemWebSocketsToVtortolaCircle(ITestOutputHelper testOutputHelper)
 		{
 			_testOutputHelper = testOutputHelper;
 		}
 
-		public interface IMyService
+	public interface IMyService
 		{
 			Task<int> Add(int a, int b);
 		}
@@ -41,28 +43,33 @@ namespace Kts.Remoting.Tests
 
 			var port = new Random().Next(6000, 60000);
 
-			var listener = new WebSocketServer("ws://localhost:" + port);
-			var serverTransport = listener.GenerateTransportSource("/p1");
+			var options = new WebSocketListenerOptions();
+			options.SubProtocols = new[] { "SignalR" };
+			var listener = new WebSocketListener(new IPEndPoint(IPAddress.Loopback, port), options);
+			var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(listener);
+			listener.Standards.RegisterStandard(rfc6455);
+			var serverTransport = listener.GenerateTransportSource();
 			var serverRouter = new DefaultMessageRouter(serverTransport, serializer);
 			serverRouter.AddService<IMyService>(new MyService());
 			listener.Start();
 
-			var client = new WebSocket("ws://localhost:" + port + "/p1");
+			var client = new ClientWebSocket();
+			client.Options.AddSubProtocol("SignalR");
 			var clientTransport = client.GenerateTransportSource();
 			var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
 			var proxy = clientRouter.AddInterface<IMyService>();
-			client.Connect();
+			client.ConnectAsync(new Uri("ws://localhost:" + port + "/"), CancellationToken.None).Wait();
 
 			var result = proxy.Add(3, 4).Result;
 			Assert.Equal(7, result);
 
 			clientRouter.Dispose();
 			clientTransport.Dispose();
-			client.Close();
+			client.Dispose();
 
 			serverRouter.Dispose();
 			serverTransport.Dispose();
-			listener.Stop();
+			listener.Dispose();
 		}
 
 		[Fact]
@@ -72,17 +79,22 @@ namespace Kts.Remoting.Tests
 
 			var port = new Random().Next(6000, 60000);
 
-			var listener = new WebSocketServer("ws://localhost:" + port);
-			var serverTransport = listener.GenerateTransportSource("/p1");
+			var options = new WebSocketListenerOptions();
+			options.SubProtocols = new[] { "SignalR" };
+			var listener = new WebSocketListener(new IPEndPoint(IPAddress.Loopback, port), options);
+			var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(listener);
+			listener.Standards.RegisterStandard(rfc6455);
+			var serverTransport = listener.GenerateTransportSource();
 			var serverRouter = new DefaultMessageRouter(serverTransport, serializer);
 			serverRouter.AddService<ISumService>(new SumService());
 			listener.Start();
 
-			var client = new WebSocket("ws://localhost:" + port + "/p1");
+			var client = new ClientWebSocket();
+			client.Options.AddSubProtocol("SignalR");
 			var clientTransport = client.GenerateTransportSource();
 			var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
 			var proxy = clientRouter.AddInterface<ISumService>();
-			client.Connect();
+			client.ConnectAsync(new Uri("ws://localhost:" + port + "/"), CancellationToken.None).Wait();
 
 			const int randCnt = 100;
 			var rand = new Random(42);
@@ -113,12 +125,11 @@ namespace Kts.Remoting.Tests
 
 			clientRouter.Dispose();
 			clientTransport.Dispose();
-			client.Close();
+			client.Dispose();
 
 			serverRouter.Dispose();
 			serverTransport.Dispose();
-			listener.Stop();
+			listener.Dispose();
 		}
-
 	}
 }

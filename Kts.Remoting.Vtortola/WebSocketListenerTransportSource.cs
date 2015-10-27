@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.IO;
 using vtortola.WebSockets;
 
 // ReSharper disable once CheckNamespace
@@ -41,17 +41,18 @@ namespace Kts.Remoting.Shared
 			}
 		}
 
-		private static readonly RecyclableMemoryStreamManager _streamManager = new RecyclableMemoryStreamManager();
-
 		private async void ListenForMessages(WebSocket socket)
 		{
 			TOP:
 			try
 			{
+				if (!socket.IsConnected)
+					return;
+
 				var message = await socket.ReadMessageAsync(_tokenSource.Token);
 				if (message != null)
 				{
-					using (var ms = _streamManager.GetStream("VtortolaReceived")) // length was throwing an exception
+					using (var ms = new MemoryStream()) // length was throwing an exception
 					{
 						message.CopyTo(ms);
 						var segment = new ArraySegment<byte>(ms.GetBuffer(), 0, (int)ms.Length);
@@ -59,6 +60,7 @@ namespace Kts.Remoting.Shared
 						Received.Invoke(this, args);
 					}
 				}
+				goto TOP;
 			}
 			catch (TaskCanceledException) { }
 			catch (Exception)
@@ -80,7 +82,8 @@ namespace Kts.Remoting.Shared
 			var tasks = new List<Task>(connectionIDs.Length);
 			foreach (WebSocket socket in connectionIDs)
 			{
-				if (!socket.IsConnected) continue;
+				if (!socket.IsConnected) 
+					continue;
 				using (var writer = socket.CreateMessageWriter(WebSocketMessageType.Binary))
 					tasks.Add(writer.WriteAsync(data.Array, data.Offset, data.Count));
 			}

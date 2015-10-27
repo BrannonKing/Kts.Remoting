@@ -29,7 +29,8 @@ namespace Kts.Remoting.Shared
 
 		public Task Send(ArraySegment<byte> data, params object[] connectionIDs)
 		{
-			return Task.Run(() => _socket.Send(data.Array, data.Offset, data.Count)); // not sure if we really need the task here
+			_socket.Send(data.Array, data.Offset, data.Count);
+			return Task.FromResult(true);
 		}
 
 		public event EventHandler<DataReceivedArgs> Received = delegate { };

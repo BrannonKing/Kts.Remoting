@@ -1,16 +1,28 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommonSerializer.Json.NET;
+using Kts.Remoting.Benchmarks;
 using Kts.Remoting.Shared;
 using Microsoft.Owin.Hosting;
 using Owin;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Kts.Remoting.Tests
 {
 	public class EverytingToOwin
 	{
+		private readonly ITestOutputHelper _testOutputHelper;
+
+		public EverytingToOwin(ITestOutputHelper testOutputHelper)
+		{
+			_testOutputHelper = testOutputHelper;
+		}
+
+
 		public interface IMyService
 		{
 			Task<int> Add(int a, int b);
@@ -87,5 +99,52 @@ namespace Kts.Remoting.Tests
 
 			server.Dispose();
 		}
+
+		[Fact]
+		public void BenchmarkMessages()
+		{
+			var serializer = new JsonCommonSerializer();
+			var port = new Random().Next(20000, 60000);
+
+			var url = "http://localhost:" + port + "/";
+			var server = WebApp.Start<Startup>(url);
+
+			var client = new WebSocketSharp.WebSocket("ws://localhost:" + port + "/rt1");
+			var clientTransport = client.GenerateTransportSource();
+			var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
+			var proxy = clientRouter.AddInterface<ISumService>();
+			client.Connect();
+
+			const int randCnt = 100;
+			var rand = new Random(42);
+			var randoms = new int[randCnt];
+			for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+
+			var sw = new Stopwatch();
+			for (int j = 0; j < 500; j++)
+			{
+				sw.Start();
+				var sum = proxy.Sum(randoms).Result;
+				sw.Stop();
+				Assert.Equal(randoms.Sum(), sum);
+				for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+			}
+
+			_testOutputHelper.WriteLine("Completed 500 sum passes in {0}ms", sw.Elapsed.TotalMilliseconds);
+
+			sw.Reset();
+			var tree = new SumServiceTree();
+			SumServiceTree.FillTree(tree, rand, 2);
+			_testOutputHelper.WriteLine("Starting large message transfer.");
+			sw.Start();
+			var result = proxy.Increment(tree).Result;
+			sw.Stop();
+			Assert.Equal(tree.Leaf + 1, result.Leaf);
+			_testOutputHelper.WriteLine("Completed large transfer in {0}ms", sw.Elapsed.TotalMilliseconds);
+
+			client.Close();
+			server.Dispose();
+		}
+
 	}
 }

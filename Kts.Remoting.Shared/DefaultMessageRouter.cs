@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Threading.Tasks;
 using CommonSerializer;
-using Microsoft.IO;
 
 namespace Kts.Remoting.Shared
 {
 	public class DefaultMessageRouter: IMessageRouter
 	{
 		private readonly ConcurrentDictionary<string, IMessageHandler> _handlers = new ConcurrentDictionary<string, IMessageHandler>();
-		private static readonly RecyclableMemoryStreamManager _streamManager = new RecyclableMemoryStreamManager();
 
 		public DefaultMessageRouter(ITransportSource transportSource, ICommonSerializer serializer, 
 			IProxyObjectGenerator proxyObjectGenerator = null, IServiceWrapperGenerator serviceWrapperGenerator = null)
@@ -23,7 +22,7 @@ namespace Kts.Remoting.Shared
 
 		private void TransportSourceOnReceived(object sender, DataReceivedArgs args)
 		{
-			using (var stream = _streamManager.GetStream("DataReceived", args.Data.Array, args.Data.Offset, args.Data.Count))
+			using (var stream = new MemoryStream(args.Data.Array, args.Data.Offset, args.Data.Count))
 			{
 				var message = Serializer.Deserialize<Message>(stream);
 				message.SessionID = args.SessionID;
@@ -62,7 +61,7 @@ namespace Kts.Remoting.Shared
 
 		public async Task Handle(Message message)
 		{
-			using (var stream = _streamManager.GetStream("DataSend"))
+			using (var stream = new MemoryStream())
 			{
 				Serializer.Serialize(stream, message);
 				var segment = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
