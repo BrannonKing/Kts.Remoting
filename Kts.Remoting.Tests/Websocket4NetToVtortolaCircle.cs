@@ -117,15 +117,15 @@ namespace Kts.Remoting.Tests
 
 			_testOutputHelper.WriteLine("Completed 500 sum passes in {0}ms", sw.Elapsed.TotalMilliseconds);
 
-			sw.Reset();
-			var tree = new SumServiceTree();
-			SumServiceTree.FillTree(tree, rand, 2);
-			_testOutputHelper.WriteLine("Starting large message transfer.");
-			sw.Start();
-			var result = proxy.Increment(tree).Result;
-			sw.Stop();
-			Assert.Equal(tree.Leaf + 1, result.Leaf);
-			_testOutputHelper.WriteLine("Completed large transfer in {0}ms", sw.Elapsed.TotalMilliseconds);
+			//sw.Reset();
+			//var tree = new SumServiceTree();
+			//SumServiceTree.FillTree(tree, rand, 2);
+			//_testOutputHelper.WriteLine("Starting large message transfer.");
+			//sw.Start();
+			//var result = proxy.Increment(tree).Result;
+			//sw.Stop();
+			//Assert.Equal(tree.Leaf + 1, result.Leaf);
+			//_testOutputHelper.WriteLine("Completed large transfer in {0}ms", sw.Elapsed.TotalMilliseconds);
 
 			clientRouter.Dispose();
 			clientTransport.Dispose();

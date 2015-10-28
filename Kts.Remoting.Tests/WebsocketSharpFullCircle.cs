@@ -69,7 +69,8 @@ namespace Kts.Remoting.Tests
 		[Fact]
 		public void Benchmark()
 		{
-			var serializer = new ProtobufCommonSerializer();// new JsonCommonSerializer();
+			var serializerSource = new Newtonsoft.Json.JsonSerializer();
+			var serializer = new JsonCommonSerializer(serializerSource); // new ProtobufCommonSerializer();// 
 
 			var port = new Random().Next(6000, 60000);
 

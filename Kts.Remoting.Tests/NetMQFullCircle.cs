@@ -123,7 +123,7 @@ namespace Kts.Remoting.Tests
 		[Fact]
 		public void Benchmark()
 		{
-			var serializer = new ProtobufCommonSerializer();// new JsonCommonSerializer();
+			var serializer = new JsonCommonSerializer(); // new ProtobufCommonSerializer();// 
 			int port = -1;
 			Poller client = null, server = null;
 			var serverThread = RunServer<ISumService>(serializer, p => port = p, p => server = p, new SumService());

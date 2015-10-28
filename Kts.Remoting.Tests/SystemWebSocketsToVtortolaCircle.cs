@@ -77,7 +77,7 @@ namespace Kts.Remoting.Tests
 		{
 			var serializer = new JsonCommonSerializer();
 
-			var port = new Random().Next(6000, 60000);
+			var port = new Random().Next(30000, 60000);
 
 			var options = new WebSocketListenerOptions();
 			options.SubProtocols = new[] { "SignalR" };

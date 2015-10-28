@@ -31,14 +31,27 @@ namespace Kts.Remoting.Benchmarks
 
 	}
 
+	[DataContract]
+	public class SumPackage
+	{
+		[DataMember(Order=1)]
+		public int[] Numbers { get; set; }
+	}
+
 	public interface ISumService
 	{
+		Task<int> SumPackage(SumPackage package);
 		Task<int> Sum(int[] values);
 		Task<SumServiceTree> Increment(SumServiceTree tree);
 	}
 
 	public class SumService : ISumService
 	{
+		public Task<int> SumPackage(SumPackage package)
+		{
+			return Sum(package.Numbers);
+		}
+
 		public Task<int> Sum(int[] values)
 		{
 			return Task.FromResult(values.Sum());

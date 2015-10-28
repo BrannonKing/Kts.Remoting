@@ -146,7 +146,7 @@ namespace Kts.Remoting.Tests
 		}
 
 		[DataContract]
-		private class SubTestData
+		private sealed class SubTestData
 		{
 			[DataMember(Order = 1)]
 			public string Name { get; set; }
@@ -190,6 +190,10 @@ namespace Kts.Remoting.Tests
 				Assert.True(container.CanWrite);
 
 				var wrapper = new ContainerWrapper { Container = container };
+
+				var str = serializer.Serialize(wrapper);
+
+				Assert.False(str.Contains("$"));
 
 				ContainerWrapper wrapper2;
 				using(var ms = new MemoryStream())

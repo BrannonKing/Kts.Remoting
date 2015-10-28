@@ -86,6 +86,11 @@ namespace Kts.Remoting.Benchmarks
 	{
 		private readonly SumService _service = new SumService();
 
+		public Task<int> SumPackage(SumPackage package)
+		{
+			return Sum(package.Numbers);
+		}
+
 		public Task<int> Sum(int[] values)
 		{
 			return _service.Sum(values);
