@@ -182,6 +182,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ProtobufBinding.cs" />
     <Compile Include="SignalR.cs" />
     <Compile Include="SumService.cs" />
     <Compile Include="WampSharp.cs" />

@@ -11,7 +11,6 @@ using WampSharp.Core.Message;
 using WampSharp.Core.Serialization;
 using WampSharp.Vtortola;
 using WampSharp.V2;
-using WampSharp.V2.Binding;
 using WampSharp.V2.Binding.Parsers;
 using WampSharp.V2.Client;
 using WampSharp.V2.Core.Contracts;
@@ -40,8 +39,8 @@ namespace Kts.Remoting.Benchmarks
 
 			var channel = factory.ConnectToRealm("realm1")
 				.WebSocketTransport("ws://127.0.0.1:8080/")
-				//.MsgpackSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
-				.JsonSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
+				.MsgpackSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
+				//.JsonSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
 				//.CraAuthentication(authenticationId: "peter", secret: "secret1")
 				.Build();
 
@@ -58,16 +57,23 @@ namespace Kts.Remoting.Benchmarks
 			var package = new SumPackage { Numbers = randoms };
 
 			var sw = new Stopwatch();
-			for (int j = 0; j < 500; j++)
+			long timeFromClient = 0, timeToClient = 0;
+			const int cnt = 1000;
+			for (int j = 0; j < cnt; j++)
 			{
 				sw.Start();
 				var sum = proxy.SumPackage(package).Result;
 				sw.Stop();
 				Assert.Equal(randoms.Sum(), sum);
 				for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+				var times = proxy.TimeDiff(Stopwatch.GetTimestamp()).Result;
+				timeFromClient += times.Item1;
+				timeToClient += Stopwatch.GetTimestamp() - times.Item2;
 			}
 
-			_testOutputHelper.WriteLine("Completed 500 sum passes in {0}ms", sw.Elapsed.TotalMilliseconds);
+			_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
+			_testOutputHelper.WriteLine("Client to server latency: {0}ms", timeFromClient / cnt / 10);
+			_testOutputHelper.WriteLine("Server to client latency: {0}ms", timeToClient / cnt / 10);
 
 			sw.Reset();
 			var tree = new SumServiceTree();
@@ -105,16 +111,23 @@ namespace Kts.Remoting.Benchmarks
 			var package = new SumPackage { Numbers = randoms };
 
 			var sw = new Stopwatch();
-			for (int j = 0; j < 500; j++)
+			long timeFromClient = 0, timeToClient = 0;
+			const int cnt = 1000;
+			for (int j = 0; j < cnt; j++)
 			{
 				sw.Start();
 				var sum = proxy.SumPackage(package).Result;
 				sw.Stop();
 				Assert.Equal(randoms.Sum(), sum);
 				for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+				var times = proxy.TimeDiff(Stopwatch.GetTimestamp()).Result;
+				timeFromClient += times.Item1;
+				timeToClient += Stopwatch.GetTimestamp() - times.Item2;
 			}
 
-			_testOutputHelper.WriteLine("Completed 500 sum passes in {0}ms", sw.Elapsed.TotalMilliseconds);
+			_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
+			_testOutputHelper.WriteLine("Client to server latency: {0}ms", timeFromClient / cnt / 10);
+			_testOutputHelper.WriteLine("Server to client latency: {0}ms", timeToClient / cnt / 10);
 
 			sw.Reset();
 			var tree = new SumServiceTree();
@@ -179,141 +192,6 @@ namespace Kts.Remoting.Benchmarks
 			}
 		}
 
-	}
-
-	public class ProtobufFormatter : IWampFormatter<ProtobufToken>
-	{
-		private readonly RuntimeTypeModel _runtime;
-
-		public ProtobufFormatter(MethodInfo classFactory = null)
-			: this(TypeModel.Create())
-		{
-			if (classFactory != null)
-				_runtime.SetDefaultFactory(classFactory);
-
-			_runtime.InferTagFromNameDefault = true;
-			_runtime.UseImplicitZeroDefaults = false;
-
-			//_runtime.Add(typeof(WampMessage<object>), false).Add("MessageType", "Arguments"); // MessageType is an invalid enum (containing duplicates)
-			//_runtime.Add(typeof(WampMessage<byte[]>), false).Add("MessageType", "Arguments");
-
-			var messageSubber = _runtime.Add(typeof(WampDetailsOptions), true);
-			var messageTypes = typeof(WampDetailsOptions).Assembly.GetTypes().Where(t => typeof(WampDetailsOptions).IsAssignableFrom(t) && !t.IsAbstract).ToList();
-			for (int i = 0; i < messageTypes.Count; i++)
-				messageSubber.AddSubType(i + 100, messageTypes[i]);
-
-		}
-
-		public ProtobufFormatter(RuntimeTypeModel runtime)
-		{
-			_runtime = runtime ?? TypeModel.Create();
-		}
-
-		public bool CanConvert(ProtobufToken argument, Type type)
-		{
-			return true;
-		}
-
-		public TTarget Deserialize<TTarget>(Stream stream)
-		{
-			return (TTarget)_runtime.DeserializeWithLengthPrefix(stream, null, typeof(TTarget), ProtoBuf.PrefixStyle.Fixed32, 0);
-		}
-
-		public TTarget Deserialize<TTarget>(ProtobufToken message)
-		{
-			return (TTarget) Deserialize(typeof(TTarget), message);
-		}
-
-		public object Deserialize(Type type, ProtobufToken message)
-		{
-			using (var ms = new MemoryStream(message.Bytes, false))
-				return _runtime.DeserializeWithLengthPrefix(ms, null, type, ProtoBuf.PrefixStyle.Fixed32, 0);
-		}
-
-		public void Serialize(object value, Stream stream)
-		{
-			_runtime.SerializeWithLengthPrefix(stream, value, value.GetType(), ProtoBuf.PrefixStyle.Fixed32, 0);
-		}
-		
-		public ProtobufToken Serialize(object value)
-		{
-			using (var ms = new MemoryStream())
-			{
-				Serialize(value, ms);
-				return new ProtobufToken { Bytes = ms.ToArray() };
-			}
-		}
-	}
-
-	public class ProtobufMessageParser : IWampMessageParser<ProtobufToken, byte[]>
-	{
-		private readonly ProtobufFormatter _formatter;
-		public ProtobufMessageParser(ProtobufFormatter formatter)
-		{
-			_formatter = formatter;
-		}
-
-		public WampMessage<ProtobufToken> Parse(Stream stream)
-		{
-			var header = new byte[4];
-			for (int i = 0; i < 4; i++)
-				header[i] = (byte)stream.ReadByte();
-			var messageType = (WampMessageType) BitConverter.ToInt32(header, 0);
-			return new WampMessage<ProtobufToken>
-			{
-				MessageType = messageType,
-				Arguments = _formatter.Deserialize<ProtobufToken[]>(stream)
-			};
-
-			//return _formatter.Deserialize<WampMessage<byte[]>>(stream); // WampMessageType is an invalid Enum (duplicates)
-		}
-
-
-
-		public void Format(WampMessage<object> message, Stream stream)
-		{
-			var header = BitConverter.GetBytes((int) message.MessageType);
-			stream.Write(header, 0, header.Length);
-			var arguments = message.Arguments.Select(a => _formatter.Serialize(a)).ToArray(); // need length on each one
-			_formatter.Serialize(arguments, stream);
-		}
-
-		public WampMessage<ProtobufToken> Parse(byte[] raw)
-		{
-			using (var ms = new MemoryStream(raw, false))
-				return Parse(ms);
-		}
-
-		public byte[] Format(WampMessage<object> message)
-		{
-			using (var ms = new MemoryStream())
-			{
-				Format(message, ms);
-				return ms.ToArray();
-			}
-		}
-	}
-
-	[ProtoBuf.ProtoContract]
-	public struct ProtobufToken
-	{
-		[ProtoBuf.ProtoMember(1)]
-		public byte[] Bytes { get; set; }
-	}
-
-	public class ProtobufBinding : WampTransportBinding<ProtobufToken, byte[]>, IWampBinaryBinding<ProtobufToken>
-	{
-		private static readonly ProtobufFormatter _defaultFormatter = new ProtobufFormatter();
-
-		public ProtobufBinding()
-			: base(_defaultFormatter, new ProtobufMessageParser(_defaultFormatter), "wamp.2.protobuf-net")
-		{
-		}
-
-		public ProtobufBinding(ProtobufFormatter formatter)
-			: base(formatter, new ProtobufMessageParser(formatter), "wamp.2.protobuf-net")
-		{
-		}
 	}
 }
 

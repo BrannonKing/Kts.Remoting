@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Hubs;
 using Microsoft.Owin.Hosting;
-using Newtonsoft.Json;
 using Owin;
 using Xunit;
 using Xunit.Abstractions;
@@ -47,16 +44,23 @@ namespace Kts.Remoting.Benchmarks
 			for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
 
 			var sw = new Stopwatch();
-			for (int j = 0; j < 500; j++)
+			long timeFromClient = 0, timeToClient = 0;
+			const int cnt = 1000;
+			for (int j = 0; j < cnt; j++)
 			{
 				sw.Start();
 				var sum = proxy.Invoke<int>("Sum", randoms).Result;
 				sw.Stop();
 				Assert.Equal(randoms.Sum(), sum);
 				for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+				var times = proxy.Invoke<Tuple<long,long>>("TimeDiff", Stopwatch.GetTimestamp()).Result;
+				timeFromClient += times.Item1;
+				timeToClient += Stopwatch.GetTimestamp() - times.Item2;
 			}
 
-			_testOutputHelper.WriteLine("Completed 500 sum passes in {0}ms", sw.Elapsed.TotalMilliseconds);
+			_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
+			_testOutputHelper.WriteLine("Client to server latency: {0}ms", timeFromClient / cnt / 10);
+			_testOutputHelper.WriteLine("Server to client latency: {0}ms", timeToClient / cnt / 10);
 
 			sw.Reset();
 			var tree = new SumServiceTree();
@@ -85,6 +89,11 @@ namespace Kts.Remoting.Benchmarks
 	public class SumServiceHub : Hub, ISumService
 	{
 		private readonly SumService _service = new SumService();
+
+		public Task<Tuple<long, long>> TimeDiff(long stamp)
+		{
+			return _service.TimeDiff(stamp);
+		}
 
 		public Task<int> SumPackage(SumPackage package)
 		{

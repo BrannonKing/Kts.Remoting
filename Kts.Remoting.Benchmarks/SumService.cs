@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
@@ -40,6 +41,7 @@ namespace Kts.Remoting.Benchmarks
 
 	public interface ISumService
 	{
+		Task<Tuple<long, long>> TimeDiff(long stamp);
 		Task<int> SumPackage(SumPackage package);
 		Task<int> Sum(int[] values);
 		Task<SumServiceTree> Increment(SumServiceTree tree);
@@ -47,6 +49,12 @@ namespace Kts.Remoting.Benchmarks
 
 	public class SumService : ISumService
 	{
+		public Task<Tuple<long, long>> TimeDiff(long stamp)
+		{
+			var current = Stopwatch.GetTimestamp();
+			return Task.FromResult(Tuple.Create(current - stamp, current));
+		}
+
 		public Task<int> SumPackage(SumPackage package)
 		{
 			return Sum(package.Numbers);
