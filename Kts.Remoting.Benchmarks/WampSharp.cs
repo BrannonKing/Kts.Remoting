@@ -72,8 +72,8 @@ namespace Kts.Remoting.Benchmarks
 			}
 
 			_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
-			_testOutputHelper.WriteLine("Client to server latency: {0}ms", timeFromClient / cnt / 10);
-			_testOutputHelper.WriteLine("Server to client latency: {0}ms", timeToClient / cnt / 10);
+			_testOutputHelper.WriteLine("Client to server latency: {0}us", timeFromClient / cnt / 10);
+			_testOutputHelper.WriteLine("Server to client latency: {0}us", timeToClient / cnt / 10);
 
 			sw.Reset();
 			var tree = new SumServiceTree();
@@ -126,8 +126,8 @@ namespace Kts.Remoting.Benchmarks
 			}
 
 			_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
-			_testOutputHelper.WriteLine("Client to server latency: {0}ms", timeFromClient / cnt / 10);
-			_testOutputHelper.WriteLine("Server to client latency: {0}ms", timeToClient / cnt / 10);
+			_testOutputHelper.WriteLine("Client to server latency: {0}us", timeFromClient / cnt / 10);
+			_testOutputHelper.WriteLine("Server to client latency: {0}us", timeToClient / cnt / 10);
 
 			sw.Reset();
 			var tree = new SumServiceTree();

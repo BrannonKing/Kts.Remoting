@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.WebSocket4Net"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Benchmarks", "Kts.Remoting.Benchmarks\Kts.Remoting.Benchmarks.csproj", "{01CCD78D-C956-4441-9317-69B371A79D4B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.ConnextDDS", "Kts.Remoting.ConnextDDS\Kts.Remoting.ConnextDDS.csproj", "{C6689E48-1811-4A65-ADFC-C1F8853CDFC8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{01CCD78D-C956-4441-9317-69B371A79D4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01CCD78D-C956-4441-9317-69B371A79D4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01CCD78D-C956-4441-9317-69B371A79D4B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6689E48-1811-4A65-ADFC-C1F8853CDFC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6689E48-1811-4A65-ADFC-C1F8853CDFC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6689E48-1811-4A65-ADFC-C1F8853CDFC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6689E48-1811-4A65-ADFC-C1F8853CDFC8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

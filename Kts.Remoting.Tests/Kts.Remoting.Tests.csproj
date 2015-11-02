@@ -32,6 +32,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
@@ -54,6 +55,9 @@
     <Reference Include="Microsoft.Owin.Hosting, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Hosting.3.0.1\lib\net45\Microsoft.Owin.Hosting.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="nddsdotnet451">
+      <HintPath>C:\Program Files\rti_connext_dds-5.2.0\lib\x64Win64VS2013\nddsdotnet451.dll</HintPath>
     </Reference>
     <Reference Include="NetMQ, Version=3.3.2.2, Culture=neutral, PublicKeyToken=a6decef4ddc58b3a, processorArchitecture=MSIL">
       <HintPath>..\packages\NetMQ.3.3.2.2\lib\net40\NetMQ.dll</HintPath>
@@ -125,6 +129,7 @@
     <Compile Include="..\Kts.Remoting.Benchmarks\SumService.cs">
       <Link>SumService.cs</Link>
     </Compile>
+    <Compile Include="DdsTests.cs" />
     <Compile Include="NetMQFullCircle.cs" />
     <Compile Include="EverytingToOwin.cs" />
     <Compile Include="SystemWebSocketsFullCircle.cs" />
@@ -149,6 +154,10 @@
     <ProjectReference Include="..\CommonSerializer\CommonSerializer.csproj">
       <Project>{6d8f5c82-4826-4008-90c1-0b8c4023c075}</Project>
       <Name>CommonSerializer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Kts.Remoting.ConnextDDS\Kts.Remoting.ConnextDDS.csproj">
+      <Project>{c6689e48-1811-4a65-adfc-c1f8853cdfc8}</Project>
+      <Name>Kts.Remoting.ConnextDDS</Name>
     </ProjectReference>
     <ProjectReference Include="..\Kts.Remoting.NetMQ\Kts.Remoting.NetMQ.csproj">
       <Project>{930c91fd-b371-4ef6-a314-5cefe28a155a}</Project>
