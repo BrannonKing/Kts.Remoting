@@ -35,7 +35,7 @@ namespace Kts.Remoting.Shared
 			_receiver = participant.create_topic(receiverTopic, BytesTypeSupport.TYPENAME, receiverTopicQos, null, StatusMask.STATUS_MASK_NONE);
 
 			var writerQos = new DataWriterQos();
-			writerQos.publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
+			//writerQos.publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
 			writerQos.publish_mode.flow_controller_name = FlowController.FIXED_RATE_FLOW_CONTROLLER_NAME;
 
 			participant.get_default_datawriter_qos(writerQos);

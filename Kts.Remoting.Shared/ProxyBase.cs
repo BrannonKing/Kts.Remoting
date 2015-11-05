@@ -31,7 +31,7 @@ namespace Kts.Remoting.Shared
 				message.ID = ToBase62(Interlocked.Increment(ref _counter));
 			} while (!_sentMessages.TryAdd(message, source));
 
-			await _handler.Handle(message);
+			await _handler.Handle(message).ConfigureAwait(false);
 			return await source.Task;
 		}
 
@@ -39,6 +39,7 @@ namespace Kts.Remoting.Shared
 
 		protected static string ToBase62(long value)
 		{
+			return value.ToString();
 			var str = "";
 			var len = (long)Base62Chars.Length;
 			while (value != 0)

@@ -123,7 +123,7 @@ namespace Kts.Remoting.Tests
 		[Fact]
 		public void Benchmark()
 		{
-			var serializer = new ProtobufCommonSerializer();// new JsonCommonSerializer(); // 
+			var serializer = new JsonCommonSerializer(); // new ProtobufCommonSerializer();// 
 			int port = -1;
 			Poller client = null, server = null;
 			var serverThread = RunServer<ISumService>(serializer, p => port = p, p => server = p, new SumService());
@@ -166,7 +166,7 @@ namespace Kts.Remoting.Tests
 			sw.Start();
 			var result = proxy.Increment(tree).Result;
 			sw.Stop();
-			Assert.Equal(tree.Leaf + 1, result.Leaf);
+			Assert.True(tree.IsExactMatch(result, 1));
 			_testOutputHelper.WriteLine("Completed large transfer in {0}ms", sw.Elapsed.TotalMilliseconds);
 
 			client.CancelAndJoin();

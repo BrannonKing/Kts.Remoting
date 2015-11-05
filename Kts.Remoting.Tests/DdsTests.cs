@@ -89,9 +89,9 @@ namespace Kts.Remoting.Tests
 
 			const int maxBufferSize = 1 << 24; // 16MB
 			serverQos.receiver_pool.buffer_size = 65530; // max allowed
-			serverQos.discovery_config.publication_writer_publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
+			//serverQos.discovery_config.publication_writer_publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
 			serverQos.discovery_config.publication_writer_publish_mode.flow_controller_name = FlowController.FIXED_RATE_FLOW_CONTROLLER_NAME;
-			serverQos.discovery_config.subscription_writer_publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
+			//serverQos.discovery_config.subscription_writer_publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
 			serverQos.discovery_config.subscription_writer_publish_mode.flow_controller_name = FlowController.FIXED_RATE_FLOW_CONTROLLER_NAME;
 
 			var len = serverQos.property_qos.value.length + 3;
@@ -120,9 +120,9 @@ namespace Kts.Remoting.Tests
 			clientQos.discovery.initial_peers.from_array(new[] { "1@localhost" });
 
 			clientQos.receiver_pool.buffer_size = 65530; // max allowed
-			clientQos.discovery_config.publication_writer_publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
+			//clientQos.discovery_config.publication_writer_publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
 			clientQos.discovery_config.publication_writer_publish_mode.flow_controller_name = FlowController.FIXED_RATE_FLOW_CONTROLLER_NAME;
-			clientQos.discovery_config.subscription_writer_publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
+			//clientQos.discovery_config.subscription_writer_publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
 			clientQos.discovery_config.subscription_writer_publish_mode.flow_controller_name = FlowController.FIXED_RATE_FLOW_CONTROLLER_NAME;
 
 			len = clientQos.property_qos.value.length + 3;
@@ -171,15 +171,15 @@ namespace Kts.Remoting.Tests
 			_testOutputHelper.WriteLine("Client to server latency: {0}us", timeFromClient / cnt / 10);
 			_testOutputHelper.WriteLine("Server to client latency: {0}us", timeToClient / cnt / 10);
 
-			sw.Reset();
-			var tree = new SumServiceTree();
-			SumServiceTree.FillTree(tree, rand, 2);
-			_testOutputHelper.WriteLine("Starting large message transfer.");
-			sw.Start();
-			var result = proxy.Increment(tree).Result;
-			sw.Stop();
-			Assert.Equal(tree.Leaf + 1, result.Leaf);
-			_testOutputHelper.WriteLine("Completed large transfer in {0}ms", sw.Elapsed.TotalMilliseconds);
+			//sw.Reset();
+			//var tree = new SumServiceTree();
+			//SumServiceTree.FillTree(tree, rand, 2);
+			//_testOutputHelper.WriteLine("Starting large message transfer.");
+			//sw.Start();
+			//var result = proxy.Increment(tree).Result;
+			//sw.Stop();
+			//Assert.Equal(tree.Leaf + 1, result.Leaf);
+			//_testOutputHelper.WriteLine("Completed large transfer in {0}ms", sw.Elapsed.TotalMilliseconds);
 
 			clientRouter.Dispose();
 			clientTransport.Dispose();

@@ -65,7 +65,7 @@ namespace Kts.Remoting.Shared
 			{
 				Serializer.Serialize(stream, message);
 				var segment = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
-				await TransportSource.Send(segment, message.SessionID);
+				await TransportSource.Send(segment, message.SessionID).ConfigureAwait(false);
 			}
 		}
 	}

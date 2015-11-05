@@ -1,23 +1,24 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using CommonSerializer.Json.NET;
 using CommonSerializer.ProtobufNet;
 using Kts.Remoting.Benchmarks;
 using Kts.Remoting.Shared;
 using Xunit;
-using WebSocketSharp.Server;
 using Xunit.Abstractions;
-using WebSocket = WebSocketSharp.WebSocket;
+using Socket = Udt.Socket;
 
 namespace Kts.Remoting.Tests
 {
-	public class WebsocketSharpFullCircle
+	public class UdtTests
 	{
-		private readonly ITestOutputHelper _testOutputHelper;
+				private readonly ITestOutputHelper _testOutputHelper;
 
-		public WebsocketSharpFullCircle(ITestOutputHelper testOutputHelper)
+				public UdtTests(ITestOutputHelper testOutputHelper)
 		{
 			_testOutputHelper = testOutputHelper;
 		}
@@ -42,50 +43,51 @@ namespace Kts.Remoting.Tests
 
 			var port = new Random().Next(6000, 60000);
 
-			var listener = new WebSocketServer("ws://localhost:" + port);
-			var serverTransport = listener.GenerateTransportSource("/p1");
+			var listener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram);
+			listener.Bind(IPAddress.Loopback, port);
+			listener.Listen(100);
+			var serverTransport = listener.GenerateTransportSource(true);
 			var serverRouter = new DefaultMessageRouter(serverTransport, serializer);
 			serverRouter.AddService<IMyService>(new MyService());
-			listener.Start();
 
-			var client = new WebSocket("ws://localhost:" + port + "/p1");
-			var clientTransport = client.GenerateTransportSource();
+			var client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram);
+			client.Connect(IPAddress.Loopback, port);
+			var clientTransport = client.GenerateTransportSource(false);
 			var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
 			var proxy = clientRouter.AddInterface<IMyService>();
-			client.Connect();
 
 			var result = proxy.Add(3, 4).Result;
 			Assert.Equal(7, result);
 
 			clientRouter.Dispose();
 			clientTransport.Dispose();
-			client.Close();
+			client.Dispose();
 
 			serverRouter.Dispose();
 			serverTransport.Dispose();
-			listener.Stop();
+			listener.Dispose();
 		}
 
 		[Fact]
 		public void Benchmark()
 		{
-			var serializerSource = new Newtonsoft.Json.JsonSerializer();
-			var serializer = new JsonCommonSerializer();//serializerSource); // new ProtobufCommonSerializer();//
+			//var serializerSource = new Newtonsoft.Json.JsonSerializer();
+			var serializer = new ProtobufCommonSerializer();//new JsonCommonSerializer(serializerSource); // 
 
 			var port = new Random().Next(6000, 60000);
 
-			var listener = new WebSocketServer("ws://localhost:" + port);
-			var serverTransport = listener.GenerateTransportSource("/p1");
+			var listener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram);
+			listener.Bind(IPAddress.Loopback, port);
+			listener.Listen(100);
+			var serverTransport = listener.GenerateTransportSource(true);
 			var serverRouter = new DefaultMessageRouter(serverTransport, serializer);
 			serverRouter.AddService<ISumService>(new SumService());
-			listener.Start();
 
-			var client = new WebSocket("ws://localhost:" + port + "/p1");
-			client.Compression = WebSocketSharp.CompressionMethod.Deflate;
-			var clientTransport = client.GenerateTransportSource();
+			var client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram);
+			client.Connect(IPAddress.Loopback, port);
+			var clientTransport = client.GenerateTransportSource(false);
 			var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
 			var proxy = clientRouter.AddInterface<ISumService>();
-			client.Connect();
 
 			const int randCnt = 100;
 			var rand = new Random(42);
@@ -93,23 +95,23 @@ namespace Kts.Remoting.Tests
 			for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
 
 			var sw = new Stopwatch();
-			long timeFromClient = 0, timeToClient = 0;
-			const int cnt = 1000;
-			for (int j = 0; j < cnt; j++)
-			{
-				sw.Start();
-				var sum = proxy.Sum(randoms).Result;
-				sw.Stop();
-				Assert.Equal(randoms.Sum(), sum);
-				for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
-				var times = proxy.TimeDiff(Stopwatch.GetTimestamp()).Result;
-				timeFromClient += times.Item1;
-				timeToClient += Stopwatch.GetTimestamp() - times.Item2;
-			}
+			//long timeFromClient = 0, timeToClient = 0;
+			//const int cnt = 1000;
+			//for (int j = 0; j < cnt; j++)
+			//{
+			//	sw.Start();
+			//	var sum = proxy.Sum(randoms).Result;
+			//	sw.Stop();
+			//	Assert.Equal(randoms.Sum(), sum);
+			//	for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+			//	var times = proxy.TimeDiff(Stopwatch.GetTimestamp()).Result;
+			//	timeFromClient += times.Item1;
+			//	timeToClient += Stopwatch.GetTimestamp() - times.Item2;
+			//}
 
-			_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
-			_testOutputHelper.WriteLine("Client to server latency: {0}us", timeFromClient / cnt / 10);
-			_testOutputHelper.WriteLine("Server to client latency: {0}us", timeToClient / cnt / 10);
+			//_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
+			//_testOutputHelper.WriteLine("Client to server latency: {0}us", timeFromClient / cnt / 10);
+			//_testOutputHelper.WriteLine("Server to client latency: {0}us", timeToClient / cnt / 10);
 
 			sw.Reset();
 			var tree = new SumServiceTree();
@@ -123,11 +125,11 @@ namespace Kts.Remoting.Tests
 
 			clientRouter.Dispose();
 			clientTransport.Dispose();
-			client.Close();
+			client.Dispose();
 
 			serverRouter.Dispose();
 			serverTransport.Dispose();
-			listener.Stop();
+			listener.Dispose();
 		}
 
 	}

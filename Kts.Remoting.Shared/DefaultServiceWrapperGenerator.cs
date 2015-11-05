@@ -121,13 +121,17 @@ namespace Kts.Remoting.Shared
 					sb.AppendLine(">(message.Arguments);");
 				}
 
-				bool hasResult = false;
+				bool hasResult = false, hasAwait = false;
 				if (typeof(Task) == method.ReturnType)
+				{
 					sb.Append("\t\t\tawait ");
+					hasAwait = true;
+				}
 				else if (typeof(Task).IsAssignableFrom(method.ReturnType))
 				{
 					sb.AppendFormat("\t\t\tvar result{0} = await ", result);
 					hasResult = true;
+					hasAwait = true;
 				}
 				else if (typeof(void) != method.ReturnType)
 				{
@@ -142,7 +146,10 @@ namespace Kts.Remoting.Shared
 					if (startVar < variable)
 						sb.Append(", ");
 				}
-				sb.AppendLine(");");
+				sb.Append(")");
+				if (hasAwait)
+					sb.Append(".ConfigureAwait(false)");
+				sb.AppendLine(";");
 				sb.AppendLine("\t\t\tmessage.Arguments = null;");
 				sb.AppendLine("\t\t\tmessage.Results = _serializer.GenerateContainer();");
 				if (hasResult)
@@ -150,7 +157,7 @@ namespace Kts.Remoting.Shared
 					sb.AppendFormat("\t\t\t_serializer.Serialize(message.Results, result{0});", result++);
 					sb.AppendLine();
 				}
-				sb.AppendLine("\t\t\tawait _handler.Handle(message);");
+				sb.AppendLine("\t\t\tawait _handler.Handle(message).ConfigureAwait(false);");
 				sb.AppendLine("\t\t\tbreak;");
 			}
 

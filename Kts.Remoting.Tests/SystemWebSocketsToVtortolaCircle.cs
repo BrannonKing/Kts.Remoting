@@ -102,16 +102,23 @@ namespace Kts.Remoting.Tests
 			for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
 
 			var sw = new Stopwatch();
-			for (int j = 0; j < 500; j++)
+			long timeFromClient = 0, timeToClient = 0;
+			const int cnt = 1000;
+			for (int j = 0; j < cnt; j++)
 			{
 				sw.Start();
 				var sum = proxy.Sum(randoms).Result;
 				sw.Stop();
 				Assert.Equal(randoms.Sum(), sum);
 				for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+				var times = proxy.TimeDiff(Stopwatch.GetTimestamp()).Result;
+				timeFromClient += times.Item1;
+				timeToClient += Stopwatch.GetTimestamp() - times.Item2;
 			}
 
-			_testOutputHelper.WriteLine("Completed 500 sum passes in {0}ms", sw.Elapsed.TotalMilliseconds);
+			_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
+			_testOutputHelper.WriteLine("Client to server latency: {0}us", timeFromClient / cnt / 10);
+			_testOutputHelper.WriteLine("Server to client latency: {0}us", timeToClient / cnt / 10);
 
 			sw.Reset();
 			var tree = new SumServiceTree();

@@ -88,6 +88,10 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="UdtProtocol, Version=0.9.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\UDT.Net.x64.0.9.0\lib\net40\UdtProtocol.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="vtortola.WebSockets, Version=2.1.9.0, Culture=neutral, PublicKeyToken=7f78616efb4a208d, processorArchitecture=MSIL">
       <HintPath>..\packages\vtortola.WebSocketListener.2.1.9.0\lib\net45\vtortola.WebSockets.dll</HintPath>
       <Private>True</Private>
@@ -134,6 +138,7 @@
     <Compile Include="EverytingToOwin.cs" />
     <Compile Include="SystemWebSocketsFullCircle.cs" />
     <Compile Include="SystemWebSocketsToVtortolaCircle.cs" />
+    <Compile Include="UdtTests.cs" />
     <Compile Include="WebsocketSharpFullCircle.cs" />
     <Compile Include="Websocket4NetToVtortolaCircle.cs" />
     <Compile Include="SerializerTests.cs" />
@@ -174,6 +179,10 @@
     <ProjectReference Include="..\Kts.Remoting.SystemWebsockets\Kts.Remoting.SystemWebsockets.csproj">
       <Project>{9bead492-469f-43a8-915f-e56de522d959}</Project>
       <Name>Kts.Remoting.SystemWebsockets</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Kts.Remoting.Udt\Kts.Remoting.Udt.csproj">
+      <Project>{185cde32-4759-4c6f-9757-7c92e3770137}</Project>
+      <Name>Kts.Remoting.Udt</Name>
     </ProjectReference>
     <ProjectReference Include="..\Kts.Remoting.Vtortola\Kts.Remoting.Vtortola.csproj">
       <Project>{fb6794c2-e1b0-40dd-b7eb-49b0b8b2e49a}</Project>

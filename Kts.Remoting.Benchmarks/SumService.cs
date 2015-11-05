@@ -30,6 +30,21 @@ namespace Kts.Remoting.Benchmarks
 			}
 		}
 
+		public bool IsExactMatch(SumServiceTree tree, int diff)
+		{
+			if (Leaf + diff != tree.Leaf)
+				return false;
+
+			if (Children == null)
+				return true;
+
+			for (int i = 0; i < Children.Length; i++)
+			{
+				if (!Children[i].IsExactMatch(tree.Children[i], diff))
+					return false;
+			}
+			return true;
+		}
 	}
 
 	[DataContract]
