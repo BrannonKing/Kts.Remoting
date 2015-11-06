@@ -1,10 +1,9 @@
 ﻿using System.Runtime.Serialization;
-using CommonSerializer;
 
 namespace Kts.Remoting.Shared
 {
 	[DataContract]
-	public sealed class Message
+	public class Message
 	{
 		/// <summary>
 		/// Unique to the process sending the message. Used to tie a response to the original message.
@@ -24,24 +23,6 @@ namespace Kts.Remoting.Shared
 		[DataMember(Name = "M", Order = 3)]
 		public string Method { get; set; }
 
-		/// <summary>
-		/// Method parameters.
-		/// </summary>
-		[DataMember(Name = "A", Order = 4)]
-		public ISerializedContainer Arguments { get; set; }
-
-		/// <summary>
-		/// Method return value.
-		/// </summary>
-		[DataMember(Name = "R", Order = 5)]
-		public ISerializedContainer Results { get; set; }
-
-		[DataMember(Name = "E", Order = 6)]
-		public string Error { get; set; }
-
-		[DataMember(Name = "T", Order = 7)]
-		public string StackTrace { get; set; }
-
 		public override bool Equals(object obj)
 		{
 			var other = obj as Message;
@@ -57,6 +38,33 @@ namespace Kts.Remoting.Shared
 		[IgnoreDataMember]
 		public object SessionID { get; set; }
 	}
+
+	[DataContract]
+	public class RequestMessage<T>: Message
+	{
+		/// <summary>
+		/// Method parameters.
+		/// </summary>
+		[DataMember(Name = "A", Order = 1)]
+		public T Arguments { get; set; }
+	}
+
+	[DataContract]
+	public class ResponseMessage<T> : Message
+	{
+		/// <summary>
+		/// Method return value.
+		/// </summary>
+		[DataMember(Name = "R", Order = 1)]
+		public T Results { get; set; }
+
+		[DataMember(Name = "E", Order = 2)]
+		public string Error { get; set; }
+
+		[DataMember(Name = "T", Order = 3)]
+		public string StackTrace { get; set; }
+	}
+
 
 	// from SignalR:
 	//public class HubInvocation

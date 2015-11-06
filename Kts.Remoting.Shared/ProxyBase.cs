@@ -31,7 +31,7 @@ namespace Kts.Remoting.Shared
 				message.ID = ToBase62(Interlocked.Increment(ref _counter));
 			} while (!_sentMessages.TryAdd(message, source));
 
-			await _handler.Handle(message).ConfigureAwait(false);
+			await _handler.Handle(type => message).ConfigureAwait(false);
 			return await source.Task;
 		}
 
@@ -39,7 +39,6 @@ namespace Kts.Remoting.Shared
 
 		protected static string ToBase62(long value)
 		{
-			return value.ToString();
 			var str = "";
 			var len = (long)Base62Chars.Length;
 			while (value != 0)
@@ -51,28 +50,24 @@ namespace Kts.Remoting.Shared
 			return str;
 		}
 
-		public Task Handle(Message message)
+		public Task Handle(Func<Type, Message> getOrCreateMessage)
 		{
 			dynamic source;
+			var message = getOrCreateMessage.Invoke(null);
 			if (_sentMessages.TryRemove(message, out source))
 			{
-				if (!string.IsNullOrEmpty(message.Error))
-					source.SetException(new Exception(message.Error) {Data = {{"Far Stack Trace", message.StackTrace}}});
-				else
-					FillSource(source, message);
+				FillSource(source, getOrCreateMessage); // TODO: eliminate DLR call
 			}
 			return Task.FromResult(true);
 		}
 
-		private void FillSource<T>(TaskCompletionSource<T> source, Message message)
+		private void FillSource<T>(TaskCompletionSource<T> source, Func<Type, Message> generator)
 		{
-			if (message.Results == null)
-				source.SetResult(default(T));
+			var message = (ResponseMessage<T>)generator.Invoke(typeof(ResponseMessage<T>));
+			if (!string.IsNullOrEmpty(message.Error))
+				source.SetException(new Exception(message.Error) { Data = { { "Far Stack Trace", message.StackTrace } } });
 			else
-			{
-				var result = _serializer.Deserialize<T>(message.Results);
-				source.SetResult(result);
-			}
+				source.SetResult(message.Results);
 		}
 	}
 }

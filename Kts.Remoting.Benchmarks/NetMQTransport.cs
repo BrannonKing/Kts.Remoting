@@ -52,7 +52,6 @@ namespace Kts.Remoting.Benchmarks
 		public override void Open()
 		{
 			// need to bind to start listener
-			_socket.Bind()
 		}
 	}
 

@@ -1,22 +1,16 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using CommonSerializer;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CSharp;
 
 namespace Kts.Remoting.Shared
 {
 	/// <summary>
 	/// This uses Roslyn to create a wrapper around the service that parses the method parameters out of the message.
 	/// </summary>
-	public class DefaultServiceWrapperGenerator : IServiceWrapperGenerator
+	public class DefaultServiceWrapperGenerator : ObjectGeneratorBase, IServiceWrapperGenerator
 	{
 		public IMessageHandler Create(IMessageHandler handler, ICommonSerializer serializer, object service)
 		{
@@ -33,23 +27,32 @@ namespace Kts.Remoting.Shared
 				if (!loaded.IsDynamic && loaded.FullName.StartsWith("System"))
 					assemblies.Add(loaded.Location);
 
-			var code = GenerateClassDefinition(className, assemblies, service);
+			var requestTypes = new List<string>();
+			var returnTypes = new List<Type>();
+			var code = GenerateClassDefinition(className, assemblies, service, requestTypes, returnTypes);
 			var assembly = CompileAndLoadClassDefinition(code, className, assemblies);
+
+			foreach (var rType in returnTypes.Distinct())
+			{
+				var inh = typeof(ResponseMessage<>).MakeGenericType(rType);
+				serializer.RegisterSubtype<Message>(inh, inh.GetHashCode());
+			}
+
+			foreach (var rType in assembly.GetTypes().Where(t => requestTypes.Contains(t.Name)))
+			{
+				var inh = typeof(RequestMessage<>).MakeGenericType(rType);
+				serializer.RegisterSubtype<Message>(inh, inh.GetHashCode());
+			}
+
 
 			var type = assembly.GetType(className);
 			return (IMessageHandler)Activator.CreateInstance(type, handler, serializer, service);
 		}
 
-		private readonly CSharpCodeProvider _provider = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
-		private string FormatType(Type t, HashSet<string> assemblies)
-		{
-			assemblies.Add(t.Assembly.Location);
-			return _provider.GetTypeOutput(new CodeTypeReference(t));
-		}
-
-		internal string GenerateClassDefinition(string className, HashSet<string> assemblies, object service)
+		internal string GenerateClassDefinition(string className, HashSet<string> assemblies, object service, List<string> perMethodTypes, List<Type> returnTypes)
 		{
 			var sb = new StringBuilder();
+			sb.AppendLine("using Kts.Remoting.Shared;");
 			sb.Append("public class ");
 			sb.Append(className);
 			sb.Append(": ");
@@ -80,19 +83,13 @@ namespace Kts.Remoting.Shared
 
 			sb.Append("\tpublic async ");
 			sb.Append(FormatType(typeof(Task), assemblies));
-			sb.Append(" Handle(");
-			sb.Append(FormatType(typeof(Message), assemblies));
-			sb.AppendLine(" message)");
+			sb.AppendLine(" Handle(System.Func<System.Type, Message> getOrCreateMessage)");
 			sb.AppendLine("\t{");
+			sb.AppendLine("\t\tvar message = getOrCreateMessage.Invoke(null);");
 			sb.AppendLine("\t\tswitch(message.Method) {");
 
 			var methods = service.GetType().GetMethods().Where(m => m.IsPublic);
 			
-			var names = methods.Select(m => m.Name).ToList();
-			var distinct = names.Distinct().ToList();
-			if (names.Count != distinct.Count)
-				throw new ArgumentException("Method overloads are not supported (yet).");
-
 			// loop through each method
 			// add a case for each
 			// for each parameter on each method
@@ -100,26 +97,22 @@ namespace Kts.Remoting.Shared
 			// finally call the method with all the parameters
 			// awaiting it if it returns a task
 
-			int variable = 0, result = 0;
 			foreach (var method in methods)
 			{
 				if (method.DeclaringType == typeof(object))
 					continue;
 
-				sb.AppendFormat("\t\tcase \"{0}\":", method.Name);
+				string typeName;
+				perMethodTypes.Add(GenerateMethodTypes(method, assemblies, out typeName));
+
+				sb.AppendFormat("\t\tcase \"{0}\": {{", typeName);
 				sb.AppendLine();
 
-				var startVar = variable;
+				sb.AppendFormat("\t\t\tvar messageA = (RequestMessage<{0}>)getOrCreateMessage.Invoke(typeof(RequestMessage<{0}>));", typeName);
+				sb.AppendLine();
 
 				// TODO: handle generic methods, handle "out" and "ref" variables
 				// TODO: catch exceptions on the method and set the error string
-				var parameters = method.GetParameters();
-				foreach (var parameter in parameters)
-				{
-					sb.AppendFormat("\t\t\tvar var{0} = _serializer.Deserialize<", variable++);
-					sb.Append(FormatType(parameter.ParameterType, assemblies));
-					sb.AppendLine(">(message.Arguments);");
-				}
 
 				bool hasResult = false, hasAwait = false;
 				if (typeof(Task) == method.ReturnType)
@@ -129,70 +122,72 @@ namespace Kts.Remoting.Shared
 				}
 				else if (typeof(Task).IsAssignableFrom(method.ReturnType))
 				{
-					sb.AppendFormat("\t\t\tvar result{0} = await ", result);
+					sb.Append("\t\t\tvar result = await ");
 					hasResult = true;
 					hasAwait = true;
 				}
 				else if (typeof(void) != method.ReturnType)
 				{
-					sb.AppendFormat("\t\t\tvar result{0} = ", result);
+					sb.Append("\t\t\tvar result = ");
 					hasResult = true;
 				}
 				sb.AppendFormat("_service.{0}(", method.Name);
-				while(startVar < variable)
+				foreach(var parameter in method.GetParameters())
 				{
-					sb.Append("var");
-					sb.Append(startVar++);
-					if (startVar < variable)
-						sb.Append(", ");
+					sb.Append("messageA.Arguments.");
+					sb.Append(parameter.Name);
+					sb.Append(", ");
 				}
+				sb.Remove(sb.Length - 2, 2);
 				sb.Append(")");
 				if (hasAwait)
 					sb.Append(".ConfigureAwait(false)");
 				sb.AppendLine(";");
-				sb.AppendLine("\t\t\tmessage.Arguments = null;");
-				sb.AppendLine("\t\t\tmessage.Results = _serializer.GenerateContainer();");
+
+				sb.Append("\t\t\tvar msg = new ");
 				if (hasResult)
 				{
-					sb.AppendFormat("\t\t\t_serializer.Serialize(message.Results, result{0});", result++);
-					sb.AppendLine();
+					var rType = StripTask(method.ReturnType);
+					returnTypes.Add(rType);
+					sb.AppendFormat("ResponseMessage<{0}>", FormatType(rType, assemblies));
 				}
-				sb.AppendLine("\t\t\tawait _handler.Handle(message).ConfigureAwait(false);");
-				sb.AppendLine("\t\t\tbreak;");
+				else
+					sb.Append("ResponseMessage<bool>");
+
+				sb.AppendLine("();");
+				sb.AppendLine("\t\t\tmsg.ID = messageA.ID;");
+				sb.AppendLine("\t\t\tmsg.Hub = messageA.Hub;");
+				sb.AppendLine("\t\t\tmsg.Method = messageA.Method;");
+				sb.AppendLine("\t\t\tmsg.SessionID = messageA.SessionID;");
+
+				if (hasResult)
+					sb.Append("\t\t\tmsg.Results = result;");
+				else
+					sb.Append("\t\t\tmsg.Results = true;");
+				sb.AppendLine();
+				sb.AppendLine("\t\t\tawait _handler.Handle(type => msg).ConfigureAwait(false);");
+				sb.AppendLine("\t\t\t} break;");
 			}
+
+			sb.AppendLine("\t\tdefault:");
+			sb.AppendLine("\t\t\tthrow new System.Exception(\"Unable to handle method.\");");
+			// TODO: add default case that returns method with error set
 
 			sb.AppendLine("\t\t}");
 			sb.AppendLine("\t}");
 			sb.AppendLine("}");
+
+			foreach (var cls in perMethodTypes)
+				sb.AppendLine(cls);
+
 			return sb.ToString();
 		}
 
-		internal Assembly CompileAndLoadClassDefinition(string code, string className, HashSet<string> assemblies)
+		private Type StripTask(Type returnType)
 		{
-			using (var ms = new MemoryStream())
-			{
-				string assemblyFileName = className + Guid.NewGuid().ToString().Replace("-", "") + ".dll";
-
-
-				var references = assemblies.Select(a => MetadataReference.CreateFromFile(a));
-				var compilation = CSharpCompilation.Create(assemblyFileName,
-					new[] { CSharpSyntaxTree.ParseText(code) }, references,
-					new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary
-#if !DEBUG
-						, optimizationLevel: OptimizationLevel.Release
-#endif
-						));
-
-				var result = compilation.Emit(ms);
-				if (!result.Success)
-				{
-					var errors = string.Join(Environment.NewLine, result.Diagnostics);
-					throw new Exception("Unable to compile. Errors:" + Environment.NewLine + errors);
-				}
-
-				var assembly = Assembly.Load(ms.GetBuffer());
-				return assembly;
-			}
+			if (typeof(Task).IsAssignableFrom(returnType))
+				return returnType.GetGenericArguments().Single();
+			return returnType;
 		}
 	}
 }

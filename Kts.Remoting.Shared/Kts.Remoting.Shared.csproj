@@ -68,6 +68,7 @@
     <Compile Include="ProxyBase.cs" />
     <Compile Include="DefaultProxyObjectGenerator.cs" />
     <Compile Include="DefaultServiceWrapperGenerator.cs" />
+    <Compile Include="ObjectGeneratorBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

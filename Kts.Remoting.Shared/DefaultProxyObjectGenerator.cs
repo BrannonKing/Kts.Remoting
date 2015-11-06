@@ -1,25 +1,19 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using CommonSerializer;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CSharp;
 
 namespace Kts.Remoting.Shared
 {
 	/// <summary>
 	/// Uses Roslyn to compile a proxy object implementing the specified interface.
 	/// </summary>
-	public class DefaultProxyObjectGenerator : IProxyObjectGenerator
+	public class DefaultProxyObjectGenerator : ObjectGeneratorBase, IProxyObjectGenerator
 	{
 		public T Create<T>(IMessageHandler handler, ICommonSerializer serializer, string serviceName)
-			where T : class
+			where T: class
 		{
 			if (!typeof(T).IsInterface)
 				throw new ArgumentException("Datatype should be interface: " + typeof(T));
@@ -32,23 +26,31 @@ namespace Kts.Remoting.Shared
 				if (!loaded.IsDynamic && loaded.FullName.StartsWith("System"))
 					assemblies.Add(loaded.Location);
 
-			var code = GenerateClassDefinition<T>(className, assemblies);
+			var requestTypes = new List<string>();
+			var returnTypes = new List<Type>();
+			var code = GenerateClassDefinition<T>(className, assemblies, requestTypes, returnTypes);
 			var assembly = CompileAndLoadClassDefinition(code, className, assemblies);
+
+			foreach (var rType in returnTypes.Distinct())
+			{
+				var inh = typeof(ResponseMessage<>).MakeGenericType(rType);
+				serializer.RegisterSubtype<Message>(inh, inh.GetHashCode());
+			}
+
+			foreach (var rType in assembly.GetTypes().Where(t => requestTypes.Contains(t.Name)))
+			{
+				var inh = typeof(RequestMessage<>).MakeGenericType(rType);
+				serializer.RegisterSubtype<Message>(inh, inh.GetHashCode());
+			}
 
 			var type = assembly.GetType(className);
 			return (T)Activator.CreateInstance(type, handler, serializer, serviceName);
 		}
 
-		private readonly CSharpCodeProvider _provider = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
-		private string FormatType(Type t, HashSet<string> assemblies)
-		{
-			assemblies.Add(t.Assembly.Location);
-			return _provider.GetTypeOutput(new CodeTypeReference(t));
-		}
-
-		internal string GenerateClassDefinition<T>(string className, HashSet<string> assemblies)
+		internal string GenerateClassDefinition<T>(string className, HashSet<string> assemblies, List<string> perMethodTypes, List<Type> returnTypes)
 		{
 			var sb = new StringBuilder();
+			sb.AppendLine("using Kts.Remoting.Shared;");
 			sb.Append("public class ");
 			sb.Append(className);
 			sb.Append(": ");
@@ -70,6 +72,9 @@ namespace Kts.Remoting.Shared
 			{
 				if (!typeof(Task).IsAssignableFrom(method.ReturnType))
 					throw new NotSupportedException("Expected all methods to return type Task (or Task<>).");
+
+				string typeName;
+				perMethodTypes.Add(GenerateMethodTypes(method, assemblies, out typeName));
 
 				sb.Append("\tpublic ");
 				sb.Append(FormatType(method.ReturnType, assemblies));
@@ -98,19 +103,20 @@ namespace Kts.Remoting.Shared
 				sb.AppendLine(")");
 				sb.AppendLine("\t{");
 				sb.Append("\t\tvar msg = new ");
-				sb.Append(FormatType(typeof(Message), assemblies));
+				sb.AppendFormat("RequestMessage<{0}>", typeName);
 				sb.AppendLine("();");
 				sb.Append("\t\tmsg.Method = \"");
-				sb.Append(method.Name);
+				sb.Append(typeName);
 				sb.AppendLine("\";");
-				sb.AppendLine("\t\tmsg.Arguments = _serializer.GenerateContainer();");
+				sb.Append("\t\tmsg.Arguments = new ");
+				sb.Append(typeName);
+				sb.AppendLine("();");
 
-				// now serialize the parameters
+				// now copy parameters to instance
 				for (int i = 0; i < parameters.Length; i++)
 				{
-					sb.Append("\t\t_serializer.Serialize(msg.Arguments, ");
-					sb.Append(parameters[i].Name);
-					sb.AppendLine(");");
+					sb.AppendFormat("\t\tmsg.Arguments.{0} = {0};", parameters[i].Name);
+					sb.AppendLine();
 				}
 
 				sb.Append("\t\treturn Send<");
@@ -123,35 +129,12 @@ namespace Kts.Remoting.Shared
 			}
 
 			sb.AppendLine("}");
+
+			foreach (var cls in perMethodTypes)
+				sb.AppendLine(cls);
+
 			return sb.ToString();
 		}
 
-		internal Assembly CompileAndLoadClassDefinition(string code, string className, HashSet<string> assemblies)
-		{
-			using (var ms = new MemoryStream())
-			{
-				string assemblyFileName = className + Guid.NewGuid().ToString().Replace("-", "") + ".dll";
-
-
-				var references = assemblies.Select(a => MetadataReference.CreateFromFile(a));
-				var compilation = CSharpCompilation.Create(assemblyFileName,
-					new[] { CSharpSyntaxTree.ParseText(code) }, references,
-					new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary
-#if !DEBUG
-						, optimizationLevel: OptimizationLevel.Release
-#endif
-						));
-
-				var result = compilation.Emit(ms);
-				if (!result.Success)
-				{
-					var errors = string.Join(Environment.NewLine, result.Diagnostics);
-					throw new Exception("Unable to compile. Errors:" + Environment.NewLine + errors);
-				}
-
-				var assembly = Assembly.Load(ms.GetBuffer());
-				return assembly;
-			}
-		}
 	}
 }

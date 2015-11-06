@@ -22,12 +22,20 @@ namespace Kts.Remoting.Shared
 
 		private void TransportSourceOnReceived(object sender, DataReceivedArgs args)
 		{
-			using (var stream = new MemoryStream(args.Data.Array, args.Data.Offset, args.Data.Count))
+			using (var stream = new MemoryStream(args.Data.Array, args.Data.Offset, args.Data.Count, false))
 			{
 				var message = Serializer.Deserialize<Message>(stream);
 				message.SessionID = args.SessionID;
 				var target = _handlers[message.Hub];
-				target.Handle(message);
+				target.Handle(type => // expecting synchronous usage
+				{
+					if (type == null || type.IsInstanceOfType(message)) 
+						return message;
+					stream.Position = 0;
+					var ret = (Message)Serializer.Deserialize(stream, type);
+					ret.SessionID = args.SessionID;
+					return ret;
+				});
 			}
 		}
 
@@ -59,11 +67,12 @@ namespace Kts.Remoting.Shared
 		public IProxyObjectGenerator ProxyObjectGenerator { get; private set; }
 		public IServiceWrapperGenerator ServiceWrapperGenerator { get; private set; }
 
-		public async Task Handle(Message message)
+		public async Task Handle(Func<Type, Message> getOrCreateMessage)
 		{
+			var message = getOrCreateMessage.Invoke(null);
 			using (var stream = new MemoryStream())
 			{
-				Serializer.Serialize(stream, message);
+				Serializer.Serialize(stream, message, message.GetType());
 				var segment = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
 				await TransportSource.Send(segment, message.SessionID).ConfigureAwait(false);
 			}

@@ -70,7 +70,7 @@ namespace Kts.Remoting.Tests
 		public void Benchmark()
 		{
 			var serializerSource = new Newtonsoft.Json.JsonSerializer();
-			var serializer = new JsonCommonSerializer();//serializerSource); // new ProtobufCommonSerializer();//
+			var serializer = new ProtobufCommonSerializer();//new JsonCommonSerializer(serializerSource); // new ProtobufCommonSerializer();//
 
 			var port = new Random().Next(6000, 60000);
 
@@ -81,7 +81,7 @@ namespace Kts.Remoting.Tests
 			listener.Start();
 
 			var client = new WebSocket("ws://localhost:" + port + "/p1");
-			client.Compression = WebSocketSharp.CompressionMethod.Deflate;
+			//client.Compression = WebSocketSharp.CompressionMethod.Deflate;
 			var clientTransport = client.GenerateTransportSource();
 			var clientRouter = new DefaultMessageRouter(clientTransport, serializer);
 			var proxy = clientRouter.AddInterface<ISumService>();

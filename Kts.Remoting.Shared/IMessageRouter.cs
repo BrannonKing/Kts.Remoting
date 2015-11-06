@@ -6,7 +6,7 @@ namespace Kts.Remoting.Shared
 {
 	public interface IMessageHandler
 	{
-		Task Handle(Message message);
+		Task Handle(Func<Type, Message> getOrCreateMessage);
 	}
 
 	public interface IMessageRouter: IMessageHandler, IDisposable

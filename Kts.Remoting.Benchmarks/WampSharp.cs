@@ -41,7 +41,8 @@ namespace Kts.Remoting.Benchmarks
 			var channel = factory.ConnectToRealm("realm1")
 				.WebSocketTransport("ws://127.0.0.1:8080/")
 				//.MsgpackSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
-				.JsonSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
+				//.JsonSerialization(new JsonSerializer { TypeNameHandling = TypeNameHandling.Auto })
+				.JsonSerialization()
 				//.CraAuthentication(authenticationId: "peter", secret: "secret1")
 				.Build();
 
@@ -144,59 +145,59 @@ namespace Kts.Remoting.Benchmarks
 			host.Dispose();
 		}
 
-		[Fact]
-		public void BenchmarkMessagesProtobufPlusNetMQ()
-		{
-			var host = StartServer();
-			var factory = new WampChannelFactory();
-			var binding = new ProtobufBinding();
-			var connection = new BinaryNetMQConnection<ProtobufToken>(binding, );
-			var channel = factory.CreateChannel("realm1", connection, binding);
+		//[Fact]
+		//public void BenchmarkMessagesProtobufPlusNetMQ()
+		//{
+		//	var host = StartServer();
+		//	var factory = new WampChannelFactory();
+		//	var binding = new ProtobufBinding();
+		//	var connection = new BinaryNetMQConnection<ProtobufToken>(binding, );
+		//	var channel = factory.CreateChannel("realm1", connection, binding);
 
-			channel.RealmProxy.Monitor.ConnectionEstablished += (sender, eventArgs) => _testOutputHelper.WriteLine("Connected with ID " + eventArgs.SessionId);
+		//	channel.RealmProxy.Monitor.ConnectionEstablished += (sender, eventArgs) => _testOutputHelper.WriteLine("Connected with ID " + eventArgs.SessionId);
 
-			channel.Open().Wait();
+		//	channel.Open().Wait();
 
-			var proxy = channel.RealmProxy.Services.GetCalleeProxy<ISumService>(new CallerNameInterceptor());
+		//	var proxy = channel.RealmProxy.Services.GetCalleeProxy<ISumService>(new CallerNameInterceptor());
 
-			const int randCnt = 100;
-			var rand = new Random(42);
-			var randoms = new int[randCnt];
-			for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
-			var package = new SumPackage { Numbers = randoms };
+		//	const int randCnt = 100;
+		//	var rand = new Random(42);
+		//	var randoms = new int[randCnt];
+		//	for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+		//	var package = new SumPackage { Numbers = randoms };
 
-			var sw = new Stopwatch();
-			long timeFromClient = 0, timeToClient = 0;
-			const int cnt = 1000;
-			for (int j = 0; j < cnt; j++)
-			{
-				sw.Start();
-				var sum = proxy.SumPackage(package).Result;
-				sw.Stop();
-				Assert.Equal(randoms.Sum(), sum);
-				for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
-				var times = proxy.TimeDiff(Stopwatch.GetTimestamp()).Result;
-				timeFromClient += times.Item1;
-				timeToClient += Stopwatch.GetTimestamp() - times.Item2;
-			}
+		//	var sw = new Stopwatch();
+		//	long timeFromClient = 0, timeToClient = 0;
+		//	const int cnt = 1000;
+		//	for (int j = 0; j < cnt; j++)
+		//	{
+		//		sw.Start();
+		//		var sum = proxy.SumPackage(package).Result;
+		//		sw.Stop();
+		//		Assert.Equal(randoms.Sum(), sum);
+		//		for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+		//		var times = proxy.TimeDiff(Stopwatch.GetTimestamp()).Result;
+		//		timeFromClient += times.Item1;
+		//		timeToClient += Stopwatch.GetTimestamp() - times.Item2;
+		//	}
 
-			_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
-			_testOutputHelper.WriteLine("Client to server latency: {0}us", timeFromClient / cnt / 10);
-			_testOutputHelper.WriteLine("Server to client latency: {0}us", timeToClient / cnt / 10);
+		//	_testOutputHelper.WriteLine("Completed {0} sum passes in {1}ms", cnt, sw.ElapsedMilliseconds);
+		//	_testOutputHelper.WriteLine("Client to server latency: {0}us", timeFromClient / cnt / 10);
+		//	_testOutputHelper.WriteLine("Server to client latency: {0}us", timeToClient / cnt / 10);
 
-			sw.Reset();
-			var tree = new SumServiceTree();
-			SumServiceTree.FillTree(tree, rand, 2);
-			_testOutputHelper.WriteLine("Starting large message transfer.");
-			sw.Start();
-			var result = proxy.Increment(tree).Result;
-			sw.Stop();
-			Assert.True(tree.IsExactMatch(result, 1));
-			_testOutputHelper.WriteLine("Completed large transfer in {0}ms", sw.Elapsed.TotalMilliseconds);
+		//	sw.Reset();
+		//	var tree = new SumServiceTree();
+		//	SumServiceTree.FillTree(tree, rand, 2);
+		//	_testOutputHelper.WriteLine("Starting large message transfer.");
+		//	sw.Start();
+		//	var result = proxy.Increment(tree).Result;
+		//	sw.Stop();
+		//	Assert.True(tree.IsExactMatch(result, 1));
+		//	_testOutputHelper.WriteLine("Completed large transfer in {0}ms", sw.Elapsed.TotalMilliseconds);
 
-			channel.Close();
-			host.Dispose();
-		}
+		//	channel.Close();
+		//	host.Dispose();
+		//}
 
 
 		public class CallerNameInterceptor : ICalleeProxyInterceptor
