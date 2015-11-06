@@ -20,14 +20,14 @@ namespace Kts.Remoting.Shared
 			ServiceWrapperGenerator = serviceWrapperGenerator ?? new DefaultServiceWrapperGenerator();
 		}
 
-		private void TransportSourceOnReceived(object sender, DataReceivedArgs args)
+		private async void TransportSourceOnReceived(object sender, DataReceivedArgs args)
 		{
 			using (var stream = new MemoryStream(args.Data.Array, args.Data.Offset, args.Data.Count, false))
 			{
 				var message = Serializer.Deserialize<Message>(stream);
 				message.SessionID = args.SessionID;
 				var target = _handlers[message.Hub];
-				target.Handle(type => // expecting synchronous usage
+				await target.Handle(type => // expecting delegate to not be held for usage later
 				{
 					if (type == null || type.IsInstanceOfType(message)) 
 						return message;

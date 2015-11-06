@@ -52,14 +52,14 @@ namespace Kts.Remoting.Shared
 			{
 				string assemblyFileName = className + Guid.NewGuid().ToString().Replace("-", "") + ".dll";
 
-
+				assemblies.Add(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException).Assembly.Location);
 				var references = assemblies.Select(a => MetadataReference.CreateFromFile(a));
 				var compilation = CSharpCompilation.Create(assemblyFileName,
 					new[] { CSharpSyntaxTree.ParseText(code) }, references,
 					new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary
-#if !DEBUG
-, optimizationLevel: OptimizationLevel.Release
-#endif
+//#if !DEBUG
+//, optimizationLevel: OptimizationLevel.Release
+//#endif
 ));
 
 				var result = compilation.Emit(ms);

@@ -49,8 +49,9 @@ namespace Kts.Remoting.Shared
 			return (IMessageHandler)Activator.CreateInstance(type, handler, serializer, service);
 		}
 
-		internal string GenerateClassDefinition(string className, HashSet<string> assemblies, object service, List<string> perMethodTypes, List<Type> returnTypes)
+		internal string GenerateClassDefinition(string className, HashSet<string> assemblies, object service, List<string> addedTypeNames, List<Type> returnTypes)
 		{
+			var perMethodTypes = new List<string>();
 			var sb = new StringBuilder();
 			sb.AppendLine("using Kts.Remoting.Shared;");
 			sb.Append("public class ");
@@ -104,11 +105,12 @@ namespace Kts.Remoting.Shared
 
 				string typeName;
 				perMethodTypes.Add(GenerateMethodTypes(method, assemblies, out typeName));
+				addedTypeNames.Add(typeName);
 
 				sb.AppendFormat("\t\tcase \"{0}\": {{", typeName);
 				sb.AppendLine();
 
-				sb.AppendFormat("\t\t\tvar messageA = (RequestMessage<{0}>)getOrCreateMessage.Invoke(typeof(RequestMessage<{0}>));", typeName);
+				sb.AppendFormat("\t\t\tdynamic messageA = getOrCreateMessage.Invoke(typeof(RequestMessage<{0}>));", typeName);
 				sb.AppendLine();
 
 				// TODO: handle generic methods, handle "out" and "ref" variables

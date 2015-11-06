@@ -70,7 +70,7 @@ namespace Kts.Remoting.Tests
 		public void Benchmark()
 		{
 			var serializerSource = new Newtonsoft.Json.JsonSerializer();
-			var serializer = new ProtobufCommonSerializer();//new JsonCommonSerializer(serializerSource); // new ProtobufCommonSerializer();//
+			var serializer =new JsonCommonSerializer(serializerSource); // new ProtobufCommonSerializer();//
 
 			var port = new Random().Next(6000, 60000);
 
@@ -91,6 +91,7 @@ namespace Kts.Remoting.Tests
 			var rand = new Random(42);
 			var randoms = new int[randCnt];
 			for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);
+			var package = new SumPackage { Numbers = randoms };
 
 			var sw = new Stopwatch();
 			long timeFromClient = 0, timeToClient = 0;
@@ -98,7 +99,8 @@ namespace Kts.Remoting.Tests
 			for (int j = 0; j < cnt; j++)
 			{
 				sw.Start();
-				var sum = proxy.Sum(randoms).Result;
+				//var sum = proxy.Sum(randoms).Result;
+				var sum = proxy.SumPackage(package).Result;
 				sw.Stop();
 				Assert.Equal(randoms.Sum(), sum);
 				for (int i = 0; i < randCnt; i++) randoms[i] = rand.Next(10000000, 20000000);

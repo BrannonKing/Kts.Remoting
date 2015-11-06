@@ -47,8 +47,9 @@ namespace Kts.Remoting.Shared
 			return (T)Activator.CreateInstance(type, handler, serializer, serviceName);
 		}
 
-		internal string GenerateClassDefinition<T>(string className, HashSet<string> assemblies, List<string> perMethodTypes, List<Type> returnTypes)
+		internal string GenerateClassDefinition<T>(string className, HashSet<string> assemblies, List<string> addedTypeNames, List<Type> returnTypes)
 		{
+			var perMethodTypes = new List<string>();
 			var sb = new StringBuilder();
 			sb.AppendLine("using Kts.Remoting.Shared;");
 			sb.Append("public class ");
@@ -75,6 +76,7 @@ namespace Kts.Remoting.Shared
 
 				string typeName;
 				perMethodTypes.Add(GenerateMethodTypes(method, assemblies, out typeName));
+				addedTypeNames.Add(typeName);
 
 				sb.Append("\tpublic ");
 				sb.Append(FormatType(method.ReturnType, assemblies));

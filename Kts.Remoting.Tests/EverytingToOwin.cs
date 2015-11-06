@@ -41,7 +41,7 @@ namespace Kts.Remoting.Tests
 		{
 			public void Configuration(IAppBuilder app)
 			{
-				var serializer = new ProtobufCommonSerializer(); // new JsonCommonSerializer(); // 
+				var serializer = new JsonCommonSerializer(); // new ProtobufCommonSerializer(); // 
 				var source = app.GenerateTransportSource("/rt1");
 				var serverRouter = new DefaultMessageRouter(source, serializer);
 				serverRouter.AddService<IMyService>(new MyService());
@@ -105,7 +105,7 @@ namespace Kts.Remoting.Tests
 		[Fact]
 		public void BenchmarkMessagesWebSocketSharp()
 		{
-			var serializer = new ProtobufCommonSerializer(); // new JsonCommonSerializer(); // 
+			var serializer = new JsonCommonSerializer(); // new ProtobufCommonSerializer(); // 
 			var port = new Random().Next(20000, 60000);
 
 			var url = "http://localhost:" + port + "/";
