@@ -2,8 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using CommonSerializer.Json.NET;
-using CommonSerializer.ProtobufNet;
+using CommonSerializer.Newtonsoft.Json;
 using Kts.Remoting.Benchmarks;
 using Kts.Remoting.Shared;
 using Xunit;

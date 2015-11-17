@@ -3,12 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonSerializer", "CommonSerializer\CommonSerializer.csproj", "{6D8F5C82-4826-4008-90C1-0B8C4023C075}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonSerializer.Json.NET", "CommonSerializer.Json.NET\CommonSerializer.Json.NET.csproj", "{F8C7282A-E590-453B-8799-934311608C95}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonSerializer.Protobuf-net", "CommonSerializer.Protobuf-net\CommonSerializer.Protobuf-net.csproj", "{2CA64CC8-E1E2-4680-8B3A-A793F3B70D74}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Tests", "Kts.Remoting.Tests\Kts.Remoting.Tests.csproj", "{402094FE-5A7F-4106-8E77-87F2F3E18FD2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Remoting.Shared", "Kts.Remoting.Shared\Kts.Remoting.Shared.csproj", "{ED7A2881-CC9E-45EA-964E-8B5BDD70CB21}"
@@ -42,18 +36,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6D8F5C82-4826-4008-90C1-0B8C4023C075}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6D8F5C82-4826-4008-90C1-0B8C4023C075}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6D8F5C82-4826-4008-90C1-0B8C4023C075}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6D8F5C82-4826-4008-90C1-0B8C4023C075}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F8C7282A-E590-453B-8799-934311608C95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F8C7282A-E590-453B-8799-934311608C95}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F8C7282A-E590-453B-8799-934311608C95}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F8C7282A-E590-453B-8799-934311608C95}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2CA64CC8-E1E2-4680-8B3A-A793F3B70D74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2CA64CC8-E1E2-4680-8B3A-A793F3B70D74}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2CA64CC8-E1E2-4680-8B3A-A793F3B70D74}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2CA64CC8-E1E2-4680-8B3A-A793F3B70D74}.Release|Any CPU.Build.0 = Release|Any CPU
 		{402094FE-5A7F-4106-8E77-87F2F3E18FD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{402094FE-5A7F-4106-8E77-87F2F3E18FD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{402094FE-5A7F-4106-8E77-87F2F3E18FD2}.Release|Any CPU.ActiveCfg = Release|Any CPU

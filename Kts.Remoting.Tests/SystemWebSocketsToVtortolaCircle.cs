@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using CommonSerializer.Json.NET;
+using CommonSerializer.Newtonsoft.Json;
 using Kts.Remoting.Benchmarks;
 using Kts.Remoting.Shared;
 using vtortola.WebSockets;
