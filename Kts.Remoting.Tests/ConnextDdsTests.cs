@@ -11,11 +11,11 @@ using Xunit.Abstractions;
 
 namespace Kts.Remoting.Tests
 {
-	public class DdsTests
+	public class ConnextDdsTests
 	{
 		private readonly ITestOutputHelper _testOutputHelper;
 
-		public DdsTests(ITestOutputHelper testOutputHelper)
+		public ConnextDdsTests(ITestOutputHelper testOutputHelper)
 		{
 			_testOutputHelper = testOutputHelper;
 		}
@@ -24,7 +24,7 @@ namespace Kts.Remoting.Tests
 		[DllImport("kernel32.dll", SetLastError = true)]
 		private static extern bool SetDllDirectory(string lpPathName);
 
-		static DdsTests()
+		static ConnextDdsTests()
 		{
 			Environment.SetEnvironmentVariable("RTI_LICENSE_FILE", @"C:\Program Files\rti_connext_dds-5.2.0\rti_license.dat");
 			SetDllDirectory(@"C:\Program Files\rti_connext_dds-5.2.0\lib\x64Win64VS2013\");

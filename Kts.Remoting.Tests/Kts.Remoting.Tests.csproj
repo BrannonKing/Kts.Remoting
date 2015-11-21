@@ -24,6 +24,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -56,6 +57,9 @@
       <HintPath>..\packages\CommonSerializer.Protobuf-net.1.0.1\lib\net45\CommonSerializer.Protobuf-net.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="dcpssacsAssembly">
+      <HintPath>C:\dev\opensplice\HDE\x86_64.win64\bin\dcpssacsAssembly.dll</HintPath>
+    </Reference>
     <Reference Include="Jil, Version=2.12.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Jil.2.12.1\lib\net45\Jil.dll</HintPath>
       <Private>True</Private>
@@ -79,9 +83,6 @@
     <Reference Include="Microsoft.Owin.Hosting, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Hosting.3.0.1\lib\net45\Microsoft.Owin.Hosting.dll</HintPath>
       <Private>True</Private>
-    </Reference>
-    <Reference Include="nddsdotnet451">
-      <HintPath>C:\Program Files\rti_connext_dds-5.2.0\lib\x64Win64VS2013\nddsdotnet451.dll</HintPath>
     </Reference>
     <Reference Include="NetMQ, Version=3.3.2.2, Culture=neutral, PublicKeyToken=a6decef4ddc58b3a, processorArchitecture=MSIL">
       <HintPath>..\packages\NetMQ.3.3.2.2\lib\net40\NetMQ.dll</HintPath>
@@ -165,7 +166,7 @@
     <Compile Include="..\Kts.Remoting.Benchmarks\SumService.cs">
       <Link>SumService.cs</Link>
     </Compile>
-    <Compile Include="DdsTests.cs" />
+    <Compile Include="OpenSpliceDdsTests.cs" />
     <Compile Include="NetMQFullCircle.cs" />
     <Compile Include="EverytingToOwin.cs" />
     <Compile Include="SystemWebSocketsFullCircle.cs" />
@@ -179,13 +180,13 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Kts.Remoting.ConnextDDS\Kts.Remoting.ConnextDDS.csproj">
-      <Project>{c6689e48-1811-4a65-adfc-c1f8853cdfc8}</Project>
-      <Name>Kts.Remoting.ConnextDDS</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Kts.Remoting.NetMQ\Kts.Remoting.NetMQ.csproj">
       <Project>{930c91fd-b371-4ef6-a314-5cefe28a155a}</Project>
       <Name>Kts.Remoting.NetMQ</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Kts.Remoting.OpenSpliceDDS\Kts.Remoting.OpenSpliceDDS.csproj">
+      <Project>{6101d25a-fcac-482f-a75b-154ae5d915f9}</Project>
+      <Name>Kts.Remoting.OpenSpliceDDS</Name>
     </ProjectReference>
     <ProjectReference Include="..\Kts.Remoting.Owin\Kts.Remoting.Owin.csproj">
       <Project>{c58d1fc3-f22f-4d24-9748-32e03b4b47a1}</Project>
@@ -218,6 +219,12 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="C:\dev\opensplice\HDE\x86_64.win64\bin\ddskernel.dll">
+      <Link>ddskernel.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
