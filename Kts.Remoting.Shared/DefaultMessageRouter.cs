@@ -22,6 +22,8 @@ namespace Kts.Remoting.Shared
 
 		private async void TransportSourceOnReceived(object sender, DataReceivedArgs args)
 		{
+			if (args.Data.Array == null) return;
+
 			using (var stream = new MemoryStream(args.Data.Array, args.Data.Offset, args.Data.Count, false))
 			{
 				var message = Serializer.Deserialize<Message>(stream);

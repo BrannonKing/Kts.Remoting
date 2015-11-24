@@ -29,6 +29,12 @@ namespace Kts.Remoting.Shared
 		public DomainParticipantTransportSource(IDomainParticipant participant, string senderTopic, string receiverTopic)
 		{
 			_participant = participant;
+
+			var bdt = new ByteDataTypeSupport();
+			var result = bdt.RegisterType(participant, bdt.TypeName);
+			if (result != ReturnCode.Ok)
+				throw new Exception("Unable to register type: " + result);
+
 			_publisher = _participant.CreatePublisher();
 			_subscriber = _participant.CreateSubscriber();
 
@@ -38,14 +44,11 @@ namespace Kts.Remoting.Shared
 			var receiverTopicQos = new TopicQos();
 			participant.GetDefaultTopicQos(ref receiverTopicQos);
 
-			var bdt = new ByteDataTypeSupport();
-			var result = bdt.RegisterType(participant, bdt.TypeName);
-
 			_senderTopic = participant.CreateTopic(senderTopic, bdt.TypeName, senderTopicQos);
 			_receiverTopic = participant.CreateTopic(receiverTopic, bdt.TypeName, receiverTopicQos);
 
 			_dataWriter = (ByteDataWriter)_publisher.CreateDataWriter(_senderTopic);
-			var handle = _dataWriter.RegisterInstance(_dataToSend);
+			_dataToSendHandle = _dataWriter.RegisterInstance(_dataToSend);
 
 			var dataReaderQos = new DataReaderQos();
 			_subscriber.GetDefaultDataReaderQos(ref dataReaderQos);
@@ -53,20 +56,29 @@ namespace Kts.Remoting.Shared
 		}
 
 		private readonly ByteData _dataToSend = new ByteData();
+		private InstanceHandle _dataToSendHandle;
 
 		public Task Send(ArraySegment<byte> data, params object[] connectionIDs)
 		{
-			_dataToSend.Bytes = data;
+			if (data.Count > _dataToSend.Bytes.Length)
+				throw new ArgumentException("Expected smaller array.");
+
+			Array.Copy(data.Array, data.Offset, _dataToSend.Bytes, 0, data.Count);
+			_dataToSend.Count = data.Count;
 			if (connectionIDs == null || connectionIDs.Length <= 0)
 			{
-				_dataWriter.Put(_dataToSend, InstanceHandle.Nil);
+				var success = _dataWriter.Put(_dataToSend, InstanceHandle.Nil);
+				if (success != ReturnCode.Ok)
+					throw new Exception("Not successful on write: " + success);
 			}
 			else
 			{
 				for (int i = 0; i < connectionIDs.Length; i++)
 				{
 					var handle = connectionIDs[i] == null ? InstanceHandle.Nil : (InstanceHandle) connectionIDs[i];
-					_dataWriter.Put(_dataToSend, handle);
+					var success = _dataWriter.Put(_dataToSend, handle);
+					if (success != ReturnCode.Ok)
+						throw new Exception("Not successful on write: " + success);
 				}
 			}
 			return Task.FromResult(true);
@@ -80,6 +92,8 @@ namespace Kts.Remoting.Shared
 			ByteData data;
 			SampleInfo info;
 			var success = reader.Take(out data, out info);
+			if (success != ReturnCode.Ok)
+				throw new Exception("Not successful on read: " + success);
 
 			base.OnDataAvailable(entityInterface);
 
@@ -87,7 +101,7 @@ namespace Kts.Remoting.Shared
 			{
 				var args = new DataReceivedArgs
 				{
-					Data = data.Bytes,
+					Data = new ArraySegment<byte>(data.Bytes, 0, data.Count),
 					SessionID = info.InstanceHandle
 				};
 				Received.Invoke(this, args);
@@ -97,6 +111,7 @@ namespace Kts.Remoting.Shared
 		public void Dispose()
 		{
 			_subscriber.DeleteDataReader(_dataReader);
+			_dataWriter.UnregisterInstance(_dataToSend, _dataToSendHandle);
 			_publisher.DeleteDataWriter(_dataWriter);
 			_participant.DeleteTopic(_receiverTopic);
 			_participant.DeleteTopic(_senderTopic);
@@ -107,7 +122,9 @@ namespace Kts.Remoting.Shared
 
 	public class ByteData
 	{
-		public ArraySegment<byte> Bytes;
+		public ulong UID;
+		public int Count;
+		public byte[] Bytes = new byte[8192];
 	}
 
 	public class ByteDataTypeSupportFactory : TypeSupportFactory
@@ -134,9 +151,9 @@ namespace Kts.Remoting.Shared
 			return RegisterType(participant, typeName, new ByteDataMarshler());
 		}
 
-		public override string TypeName { get { return typeof(ByteData).Name; } }
-		public override string[] Description { get { return new string[0]; } } // or MetaData string
-		public override string KeyList { get { return "keyList"; } }
+		public override string TypeName { get { return "Msgs::ByteData"; } }
+		public override string[] Description { get { return new [] { "<MetaData version=\"1.0.0\"><Module name=\"Msgs\"><Struct name=\"ByteData\"><Member name=\"UID\"><ULongLong/></Member><Member name=\"Count\"><Long/></Member><Member name=\"Bytes\"><Sequence size=\"8192\"><Octet/></Sequence></Member></Struct></Module></MetaData>" }; } } // or MetaData string
+		public override string KeyList { get { return "UID"; } }
 	}
 
 	public class ByteDataMarshler : DatabaseMarshaler
@@ -160,20 +177,38 @@ namespace Kts.Remoting.Shared
 			//var pinnedArray = GCHandle.Alloc(data.Bytes, GCHandleType.Pinned);
 			//Marshal.UnsafeAddrOfPinnedArrayElement() // if offset needed
 			//var pointer = pinnedArray.AddrOfPinnedObject();
-			var objs = new object[] { data.Bytes };
-			Write(basePtr, to, offset, ref objs);
+			Write(to, offset, data.UID);
+			Write(to, offset + 8, data.Count);
+			for(int i = 0; i < data.Count; i++)
+				Write(to, offset + 12 + i, data.Bytes[i]);
+			//var objs = new object[] { data.UID, data.Count, data.Bytes };
+			//Write(basePtr, to, offset, ref objs);
 			//pinnedArray.Free();
 			return true;
 		}
 
 		public override void CopyOut(IntPtr @from, IntPtr to)
 		{
-			throw new NotImplementedException();
+			GCHandle tmpGCHandleTo = GCHandle.FromIntPtr(to);
+			object toObj = tmpGCHandleTo.Target;
+			CopyOut(from, ref toObj, 0);
+			tmpGCHandleTo.Target = toObj;
+
 		}
 
 		public override void CopyOut(IntPtr @from, ref object to, int offset)
 		{
-			throw new NotImplementedException();
+			var bd = to as ByteData;
+			if (bd == null)
+			{
+				bd = new ByteData();
+				to = bd;
+			}
+			
+			bd.UID = ReadUInt64(@from, offset);
+			bd.Count = ReadInt32(@from, offset + 8);
+			for (int i = 0; i < bd.Count; i++)
+				bd.Bytes[i] = ReadByte(@from, offset + 12 + i);
 		}
 
 		public override void InitEmbeddedMarshalers(IDomainParticipant participant)
