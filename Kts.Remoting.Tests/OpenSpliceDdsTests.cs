@@ -21,18 +21,15 @@ namespace Kts.Remoting.Tests
 		}
 
 
-		//[DllImport("kernel32.dll", SetLastError = true)]
-		//private static extern bool SetDllDirectory(string lpPathName);
+		[DllImport("kernel32.dll", SetLastError = true)]
+		private static extern bool SetDllDirectory(string lpPathName);
 
 		static OpenSpliceDdsTests()
 		{
-			//OSPL_HOME = C:\dev\opensplice\HDE\x86_64.win64\
-			//OSPL_TMPL_PATH = C:\dev\opensplice\HDE\x86_64.win64\\etc\idlpp
-			//OSPL_URI = file://C:\dev\opensplice\HDE\x86_64.win64\\etc\config\ospl.xml
 			Environment.SetEnvironmentVariable("OSPL_HOME", @"C:\dev\opensplice\HDE\x86_64.win64\");
-			Environment.SetEnvironmentVariable("OSPL_TMPL_PATH", @"C:\dev\opensplice\HDE\x86_64.win64\\etc\idlpp");
+			Environment.SetEnvironmentVariable("OSPL_TMPL_PATH", @"C:\dev\opensplice\HDE\x86_64.win64\etc\idlpp");
 			Environment.SetEnvironmentVariable("OSPL_URI", @"file://C:\dev\opensplice\HDE\x86_64.win64\etc\config\ospl.xml");
-			//SetDllDirectory(@"C:\dev\opensplice\HDE\x86_64.win64\bin");
+			SetDllDirectory(@"C:\dev\opensplice\HDE\x86_64.win64\bin");
 		}
 
 		[Fact]
@@ -44,7 +41,7 @@ namespace Kts.Remoting.Tests
 
 			var factory = DomainParticipantFactory.Instance;
 
-			var p1 = factory.LookupParticipant(DomainId.Default);
+			//var p1 = factory.LookupParticipant(DomainId.Default);
 
 			var serverParticipant = factory.CreateParticipant(DomainId.Default);
 			var serverTransport = serverParticipant.GenerateTransportSource("serverResponse", "clientRequest");
