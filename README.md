@@ -1,5 +1,5 @@
 # Kts.Remoting
-This is a competitor to WCF and SignalR. It is not ready yet.
+This project stalled when I determined that the differences between the various options where not very significant.
 
 Reasons to use Kts.Remoting over SignalR:
 1. The SignalR project is stalled until the release of Asp.net 5 (in spring of 2016).
